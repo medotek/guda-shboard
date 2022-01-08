@@ -5,6 +5,7 @@ import Register from "../views/Register";
 import Login from "../views/Login";
 import Dashboard from "../views/Dashboard";
 import store from "../store/app";
+import Account from "../views/Account";
 
 Vue.use(VueRouter)
 
@@ -17,17 +18,46 @@ const routes = [
     {
         path: '/register',
         name: 'register',
-        component: Register
+        component: Register,
+        beforeEnter: (to, from, next) => {
+            if(store.getters['auth/isAuthenticated']){
+                return next({
+                    name: 'home'
+                })
+            }
+            next()
+        }
     },
     {
         path: '/login',
         name: 'login',
-        component: Login
+        component: Login,
+        beforeEnter: (to, from, next) => {
+            if(store.getters['auth/isAuthenticated']){
+                return next({
+                    name: 'home'
+                })
+            }
+            next()
+        }
     },
     {
         path: '/dashboard',
         name: 'dashboard',
         component: Dashboard,
+        beforeEnter: (to, from, next) => {
+            if(!store.getters['auth/isAuthenticated']){
+                return next({
+                    name: 'login'
+                })
+            }
+            next()
+        }
+    },
+    {
+        path: '/account',
+        name: 'account',
+        component: Account,
         beforeEnter: (to, from, next) => {
             if(!store.getters['auth/isAuthenticated']){
                 return next({

@@ -16,3 +16,30 @@ body {
 h1 {
   color: var(--text-primary-color);
 }
+
+.button {
+  width: 100%;
+  border: none;
+  color: var(--text-primary-color);
+  border-radius: 5px;
+  padding: 10px 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.button-primary {
+  background-color: var(--guda-color);
+  font-weight: 600;
+}
+
+.button-route {
+  margin: 5px 0;
+}
+
+// Overriding style
+.Password__strength-meter{
+  background: var(--guda-password-metter) !important;
+}
+.Password__strength-meter:after, .Password__strength-meter:before{
+  border-color: var(--background-color-secondary) !important;
+}

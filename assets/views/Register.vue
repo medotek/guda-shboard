@@ -1,7 +1,7 @@
 <template>
-  <div>
-    <h1>Register</h1>
-    <form action="" @submit.prevent="submit">
+  <div class="form-container">
+    <form @submit.prevent="submit">
+      <h1>Inscription</h1>
       <input type="text"
              aria-label="Username"
              placeholder="Username"
@@ -15,22 +15,29 @@
              required
              v-model="form.email"
       >
-      <input type="password"
-             id="password-input"
-             placeholder="Password"
-             required
-             v-model="form.password"
-      >
-      <button type="submit">Register</button>
+      <password v-model="form.password"
+                placeholder="Mot de passe"
+                @score="showScore"
+      />
+      <button type="submit">S'inscrire</button>
     </form>
   </div>
 </template>
 
 <script>
-import {mapActions} from "vuex";
+import {mapActions, mapGetters, mapState} from "vuex";
+import '../styles/components/form.scss'
+import Password from 'vue-password-strength-meter'
+import store from '../store/app'
 
 export default {
   name: "Register",
+  components: {Password},
+  computed: {
+    ...mapGetters({
+      passwordStrength: "getPasswordStrength",
+    })
+  },
   data() {
     return {
       form: {
@@ -40,19 +47,34 @@ export default {
       }
     }
   },
+  state: {
+    isPasswordStrong: false
+  },
   methods: {
     ...mapActions({
       register: 'auth/register'
     }),
     submit() {
-      this.register(this.form).then(() => {
-        console.log("logged")
-      })
+      if (this.passwordStrength) {
+        this.register(this.form).then((r) => {
+          console.log('registered')
+        }).catch((e) => {
+          console.log('not registered')
+          console.log(e)
+        })
+      }
+
+    },
+    showScore(score) {
+      score > 2 ? store.commit('setPasswordStrength',true) : store.commit('setPasswordStrength',false)
     }
   }
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+.Password {
+  max-width: inherit;
+  width: 100%;
+}
 </style>

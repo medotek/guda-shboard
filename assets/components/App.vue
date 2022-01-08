@@ -28,13 +28,31 @@ export default {
 </script>
 
 <style scoped lang="scss">
+
+@media screen and (max-width: 767px) {
+  #content {
+    margin: 0 20px;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  #content {
+    margin: 0 50px;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  #content {
+    margin: 0 150px;
+  }
+}
+
 #main {
   display: flex;
-  Menu {
-    width: 30%;
-  }
+
   #content {
-    width: 70%;
+    width: 100%;
+    position: relative;
   }
 }
 

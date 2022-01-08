@@ -3,11 +3,12 @@
     <div class="guda"><span>Gudabot</span></div>
     <theme-button />
     <div id="side-menu-routes">
-      <Button title="Home" routeName="home"/>
-      <Button title="Register" v-if="!isAuthenticated" routeName="register"/>
-      <Button title="Login" v-if="!isAuthenticated" routeName="login"/>
+      <Button title="Accueil" routeName="home"/>
+      <Button title="Inscription" v-if="!isAuthenticated" routeName="register"/>
+      <Button title="Connexion" v-if="!isAuthenticated" routeName="login"/>
       <Button title="Dashboard" v-if="isAuthenticated" routeName="dashboard"/>
-      <Button title="Logout" v-if="isAuthenticated" @click="submit"/>
+<!--      Exception pour ce bouton natif-->
+      <button class="button button-primary button-route" v-if="isAuthenticated" @click="submit">Logout</button>
     </div>
   </div>
 </template>
@@ -33,6 +34,7 @@ export default {
       logout: "auth/logout",
     }),
     submit() {
+      console.log('logout')
       this.logout();
       this.$router.replace({
         name: "home",
@@ -46,7 +48,7 @@ export default {
 @import '../styles/global.scss';
 #side-menu {
   height: 100vh;
-  width: 200px;
+  width: 210px;
 
   .guda {
     color: var(--guda-color);
@@ -65,6 +67,7 @@ export default {
     height: 100%;
     justify-content: center;
     padding-left: 10px;
+    width: 200px;
   }
 }
 </style>

@@ -30,6 +30,7 @@ export default {
             let response = await axios.post('/login', credentials)
                 .catch((e)=>{
                     store.commit('setLoading', false);
+                    store.commit('setPasswordStrength',false)
                     console.log(e);
                 })
 
@@ -61,6 +62,7 @@ export default {
                 })
                 .catch((e)=>{
                     store.commit('setLoading', false)
+                    store.commit('setPasswordStrength',false)
                     console.log(e)
                 })
         },
@@ -70,6 +72,7 @@ export default {
             commit('setUser', null)
             commit('setToken', null)
             store.commit('setLoading', false)
+            store.commit('setPasswordStrength',false)
         }
     }
 }
