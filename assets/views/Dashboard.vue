@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>{{ user.name }}</h1>
+    <h1>Mon tableau de bord</h1>
   </div>
 </template>
 
@@ -8,12 +8,7 @@
 import {mapGetters} from "vuex";
 
 export default {
-  name: "Dashboard",
-  computed: {
-    ...mapGetters({
-      user: "auth/getUser",
-    })
-  }
+  name: "Dashboard"
 }
 </script>
 

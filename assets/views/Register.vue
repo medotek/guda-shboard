@@ -4,7 +4,7 @@
       <h1>Inscription</h1>
       <input type="text"
              aria-label="Username"
-             placeholder="Username"
+             placeholder="Nom d'utilisateur"
              v-model="form.username"
              required
       >
@@ -18,9 +18,17 @@
       <password v-model="form.password"
                 placeholder="Mot de passe"
                 @score="showScore"
+                v-on:input="showScoreBar"
       />
+      <input type="password" name="repeatPassword" id="repeatPassword" v-model="form.repeatPassword"
+             placeholder="Confirmer le mot de passe" required v-on:input="matchPassword">
+      <div class="password-verification">Le mot de passe ne correspond pas</div>
       <button type="submit">S'inscrire</button>
+      <ul class="guda-errors" v-if="errors.length">
+        <li class="guda-error" v-for="error in errors">{{ error }}</li>
+      </ul>
     </form>
+
   </div>
 </template>
 
@@ -33,41 +41,88 @@ import store from '../store/app'
 export default {
   name: "Register",
   components: {Password},
-  computed: {
-    ...mapGetters({
-      passwordStrength: "getPasswordStrength",
-    })
-  },
   data() {
     return {
       form: {
         username: "",
         email: "",
-        password: ""
-      }
+        password: "",
+        repeatPassword: ""
+      },
+      errors: [],
+      matchingPassword: false,
+      passwordStrength: false
     }
   },
   state: {
-    isPasswordStrong: false
+    isPasswordStrong: false,
+    passwordInput: false
   },
   methods: {
     ...mapActions({
       register: 'auth/register'
     }),
     submit() {
-      if (this.passwordStrength) {
-        this.register(this.form).then((r) => {
-          console.log('registered')
-        }).catch((e) => {
-          console.log('not registered')
-          console.log(e)
-        })
+      this.errors = [];
+
+      if (this.matchingPassword) {
+        let index = this.errors.indexOf('Les mots de passe ne correspondent pas');
+        this.errors.splice(index, 1);
+      } else {
+        this.errors.push('Les mots de passe ne correspondent pas');
       }
 
+      if (this.passwordStrength && this.matchingPassword) {
+        this.register(this.form).then((res) => {
+          console.log(res)
+          if (res.status === 201) {
+            console.log('registered')
+            this.$router.push({
+              name: 'login',
+              params: {
+                registerStatus: 'created'
+              }
+            });
+          }
+
+          let errors = res.data.error
+          if (errors) {
+            this.errors = [];
+            if (errors['message']) {
+              this.errors.push(errors['message'])
+            }
+          }
+        }).catch((e) => {
+          console.log(e)
+          this.errors = [];
+          this.errors.push('Une erreur est survenue, veuillez ré-essayer.');
+        })
+      } else {
+        this.errors.push('Ton mot de passe n\'est pas assez puissant');
+      }
+    },
+    showScoreBar(value) {
+      let passwordMeterBar = document.querySelector('.Password__strength-meter')
+      value ? passwordMeterBar.style.display = 'block' : passwordMeterBar.style.display = 'none'
     },
     showScore(score) {
-      score > 2 ? store.commit('setPasswordStrength',true) : store.commit('setPasswordStrength',false)
-    }
+      score > 2 ? this.passwordStrength = true : this.passwordStrength = false
+    },
+    matchPassword() {
+      let passwordsAreMatching = this.form.password === this.form.repeatPassword;
+      if (this.form.password) {
+        let repeatPasswordValidator = document.querySelector('.password-verification')
+        if (passwordsAreMatching) {
+          repeatPasswordValidator.style.display = 'none'
+          this.matchingPassword = true
+        } else {
+          repeatPasswordValidator.style.display = 'block'
+          this.matchingPassword = false
+        }
+      } else {
+        this.append('')
+      }
+    },
   }
 }
 </script>
@@ -76,5 +131,11 @@ export default {
 .Password {
   max-width: inherit;
   width: 100%;
+}
+
+.password-verification {
+  display: none;
+  color: var(--guda-warning-color);
+  margin-bottom: 20px;
 }
 </style>

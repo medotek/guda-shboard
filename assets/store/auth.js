@@ -3,76 +3,75 @@ import axios from 'axios'
 
 export default {
     namespaced: true,
-    state:{
+    state: {
         token: null,
         user: null
     },
-    getters:{
-        isAuthenticated(state){
+    getters: {
+        isAuthenticated(state) {
             return state.token && state.user
         },
-        getUser(state){
+        getUser(state) {
             return state.user
         }
     },
-    mutations:{
-        setToken(state, token){
+    mutations: {
+        setToken(state, token) {
             state.token = token
         },
-        setUser(state, user){
+        setUser(state, user) {
             state.user = user
         }
     },
-    actions:{
-        async login({dispatch}, credentials){
+    actions: {
+        async login({dispatch}, credentials) {
 
             store.commit('setLoading', true)
             let response = await axios.post('/login', credentials)
-                .catch((e)=>{
+                .catch((e) => {
                     store.commit('setLoading', false);
-                    store.commit('setPasswordStrength',false)
                     console.log(e);
                 })
 
             return dispatch('attempt', response.data.token)
         },
-        async attempt({commit, state}, token){
-            if(token){
+        async attempt({commit, state}, token) {
+            if (token) {
                 commit('setToken', token)
             }
 
-            if(!state.token){
+            if (!state.token) {
                 return
             }
 
-            try{
+            try {
                 let response = await axios.get('/profile')
                 commit('setUser', JSON.parse(response.data))
-            }catch(e){
+            } catch (e) {
                 commit('setUser', null)
                 commit('setToken', null)
             }
             store.commit('setLoading', false)
         },
-        async register(_, form){
+        async register(_, form) {
             store.commit('setLoading', true)
             return await axios.post('/register', form)
-                .then(()=>{
+                .then((res) => {
                     store.commit('setLoading', false)
+                    return res
                 })
-                .catch((e)=>{
+                .catch((e) => {
                     store.commit('setLoading', false)
-                    store.commit('setPasswordStrength',false)
                     console.log(e)
+                    return e
                 })
         },
-        logout({commit}){
+        logout({commit}) {
             store.commit('setLoading', true)
             localStorage.removeItem('token')
             commit('setUser', null)
             commit('setToken', null)
             store.commit('setLoading', false)
-            store.commit('setPasswordStrength',false)
         }
     }
 }

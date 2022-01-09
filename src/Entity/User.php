@@ -14,12 +14,13 @@ use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use function Couchbase\defaultEncoder;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @UniqueEntity(fields="name", message="Ce nom d'utilisateur a déjà été pris.")
- * @UniqueEntity(fields="uid", message="Cet uid est déjà utilisé. Si vous n'avez jamais mis votre uid sur le site, veuilez contacter un administrateur.")
+ * @UniqueEntity(fields="email", message="Cet email est déjà utilisé. Si vous n'avez jamais mis votre email sur le site, veuilez contacter un administrateur.")
  */
 class User implements UserInterface
 {
@@ -33,13 +34,14 @@ class User implements UserInterface
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, unique=true)
+     * @Assert\Email()
      */
     private $email;
 
     /**
      * @Groups({"discord_embed_message:read", "discord_grouped_messages:read"})
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, unique=true)
      */
     private $name;
 
@@ -69,10 +71,22 @@ class User implements UserInterface
      */
     private $discordGroupedMessages;
 
+    /**
+     * @ORM\ManyToMany(targetEntity=Team::class, mappedBy="members")
+     */
+    private $teams;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Team::class, mappedBy="creator")
+     */
+    private $teamsCreated;
+
     public function __construct()
     {
         $this->discordEmbedMessages = new ArrayCollection();
         $this->discordGroupedMessages = new ArrayCollection();
+        $this->teams = new ArrayCollection();
+        $this->teamsCreated = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -215,6 +229,63 @@ class User implements UserInterface
             // set the owning side to null (unless already changed)
             if ($discordGroupedMessage->getAuthor() === $this) {
                 $discordGroupedMessage->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Team[]
+     */
+    public function getTeams(): Collection
+    {
+        return $this->teams;
+    }
+
+    public function addTeam(Team $team): self
+    {
+        if (!$this->teams->contains($team)) {
+            $this->teams[] = $team;
+            $team->addMember($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTeam(Team $team): self
+    {
+        if ($this->teams->removeElement($team)) {
+            $team->removeMember($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Team[]
+     */
+    public function getTeamsCreated(): Collection
+    {
+        return $this->teamsCreated;
+    }
+
+    public function addTeamsCreated(Team $teamsCreated): self
+    {
+        if (!$this->teamsCreated->contains($teamsCreated)) {
+            $this->teamsCreated[] = $teamsCreated;
+            $teamsCreated->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTeamsCreated(Team $teamsCreated): self
+    {
+        if ($this->teamsCreated->removeElement($teamsCreated)) {
+            // set the owning side to null (unless already changed)
+            if ($teamsCreated->getCreator() === $this) {
+                $teamsCreated->setCreator(null);
             }
         }
 

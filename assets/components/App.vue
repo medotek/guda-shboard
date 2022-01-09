@@ -31,19 +31,19 @@ export default {
 
 @media screen and (max-width: 767px) {
   #content {
-    margin: 0 20px;
+    padding: 0 20px;
   }
 }
 
 @media screen and (min-width: 768px) {
   #content {
-    margin: 0 50px;
+    padding: 0 50px;
   }
 }
 
 @media screen and (min-width: 1200px) {
   #content {
-    margin: 0 150px;
+    padding: 0 150px;
   }
 }
 
@@ -53,6 +53,7 @@ export default {
   #content {
     width: 100%;
     position: relative;
+    background-color: var(--guda-content)
   }
 }
 
@@ -60,7 +61,7 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  background-color: black;
+  background-color: var(--background-color-primary);
   width: 100vw;
   height: 100vh;
   z-index: 99

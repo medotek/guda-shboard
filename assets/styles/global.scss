@@ -1,33 +1,43 @@
 :root {
   --background-color-primary: #ebebeb;
   --background-color-secondary: white;
+  --background-menu: white;
   --accent-color: #cacaca;
   --text-primary-color: #222;
   --element-size: 4rem;
   --guda-color: #ff6132;
+  --guda-content: #dbdbdb;
   --guda-light-blue: #D1DCF1;
   --guda-grey: #F7F7F7;
+  --guda-accent-color: #F7F7F7;
   --guda-dark-blue: #24286E;
   --guda-discord: #36393e;
   --guda-discord-darker: #2f3136;
   --guda-discord-field: #72767d;
   --guda-discord-hover: #32353b;
   --guda-password-metter: #ddd;
+  --guda-warning-color: #ff2f2f;
+  --guda-success-color: #44e77bfa;
 }
 
 /* Define styles for the root window with dark - mode preference */
 :root.dark-theme {
   --background-color-primary: #151515;
   --background-color-secondary: #39393b;
+  --background-menu: #151515;
   --accent-color: #3f3f3f;
   --text-primary-color: #ddd;
   --guda-color: #ff6132;
+  --guda-content: #1f1e1e;
   --guda-light-blue: #D1DCF1;
   --guda-grey: #F7F7F7;
+  --guda-accent-color: #ffd2b5;
   --guda-dark-blue: #24286E;
   --guda-discord: #36393e;
   --guda-discord-darker: #2f3136;
   --guda-discord-field: #72767d;
   --guda-discord-hover: #32353b;
   --guda-password-metter: #2e2e2e;
+  --guda-warning-color: #ff2f2f;
+  --guda-success-color: #44e77bfa;
 }
