@@ -6,12 +6,14 @@ import Login from "../views/Login";
 import Dashboard from "../views/Dashboard";
 import store from "../store/app";
 import Account from "../views/Account";
+import NotFound from "../components/NotFound";
+import DiscordOauth2 from "../components/DiscordOauth2";
 
 Vue.use(VueRouter)
 
 const routes = [
     {
-        path: '/home',
+        path: '/',
         name: 'home',
         component: Home
     },
@@ -20,7 +22,7 @@ const routes = [
         name: 'register',
         component: Register,
         beforeEnter: (to, from, next) => {
-            if(store.getters['auth/isAuthenticated']){
+            if (store.getters['auth/isAuthenticated']) {
                 return next({
                     name: 'home'
                 })
@@ -33,7 +35,7 @@ const routes = [
         name: 'login',
         component: Login,
         beforeEnter: (to, from, next) => {
-            if(store.getters['auth/isAuthenticated']){
+            if (store.getters['auth/isAuthenticated']) {
                 return next({
                     name: 'home'
                 })
@@ -46,7 +48,7 @@ const routes = [
         name: 'dashboard',
         component: Dashboard,
         beforeEnter: (to, from, next) => {
-            if(!store.getters['auth/isAuthenticated']){
+            if (!store.getters['auth/isAuthenticated']) {
                 return next({
                     name: 'login'
                 })
@@ -59,20 +61,44 @@ const routes = [
         name: 'account',
         component: Account,
         beforeEnter: (to, from, next) => {
-            if(!store.getters['auth/isAuthenticated']){
+            if (!store.getters['auth/isAuthenticated']) {
                 return next({
                     name: 'login'
                 })
             }
             next()
         }
-    }
+    },
+    {
+        path: '/not-found',
+        name: 'notFound',
+        component: NotFound
+    },
+    {
+        path: '/discord',
+        name: 'discord',
+        children: [
+            {
+                path: 'auth',
+                name: 'discord.auth',
+                component: DiscordOauth2
+            }
+        ]
+    },
 ]
 
 const router = new VueRouter({
     mode: 'history',
     base: process.env.BASE_URL,
     routes
+})
+
+router.beforeEach((to, from, next) => {
+    if (!to.matched.length) {
+        next({name: 'notFound'});
+    } else {
+        next();
+    }
 })
 
 export default router

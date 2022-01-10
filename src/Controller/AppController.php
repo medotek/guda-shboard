@@ -31,7 +31,8 @@ class AppController extends AbstractController
     }
 
     /**
-     * @Route("/{entry}", name="app.entry")
+     * @Route("/", name="homepage")
+     * @Route("/{route}", name="vue_pages", requirements={"route"="^(?!.*api).+"})
      */
     public function app() : Response
     {

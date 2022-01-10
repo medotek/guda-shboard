@@ -74,7 +74,6 @@ export default {
 
       if (this.passwordStrength && this.matchingPassword) {
         this.register(this.form).then((res) => {
-          console.log(res)
           if (res.status === 201) {
             console.log('registered')
             this.$router.push({
