@@ -27,6 +27,7 @@ class User implements UserInterface
     private $encoderFactory;
 
     /**
+     * @Groups("user")
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
@@ -40,6 +41,7 @@ class User implements UserInterface
     private $email;
 
     /**
+     * @Groups("user")
      * @Groups({"discord_embed_message:read", "discord_grouped_messages:read"})
      * @ORM\Column(type="string", length=255, unique=true)
      */
@@ -51,7 +53,7 @@ class User implements UserInterface
     private $password;
 
     /**
-     * @ORM\Column(type="date", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $creationDate;
 
@@ -62,6 +64,7 @@ class User implements UserInterface
     private $roles = [];
 
     /**
+     * @Groups("user")
      * @ORM\OneToMany(targetEntity=DiscordEmbedMessage::class, mappedBy="user")
      */
     private $discordEmbedMessages;
@@ -80,6 +83,17 @@ class User implements UserInterface
      * @ORM\OneToMany(targetEntity=Team::class, mappedBy="creator")
      */
     private $teamsCreated;
+
+    /**
+     * @Groups("user")
+     * @ORM\OneToOne(targetEntity=DiscordCredentials::class, mappedBy="user", cascade={"persist", "remove"})
+     */
+    private $discordCredentials;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $lastConnectionDate;
 
     public function __construct()
     {
@@ -288,6 +302,40 @@ class User implements UserInterface
                 $teamsCreated->setCreator(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getDiscordCredentials(): ?DiscordCredentials
+    {
+        return $this->discordCredentials;
+    }
+
+    public function setDiscordCredentials(?DiscordCredentials $discordCredentials): self
+    {
+        // unset the owning side of the relation if necessary
+        if ($discordCredentials === null && $this->discordCredentials !== null) {
+            $this->discordCredentials->setUser(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($discordCredentials !== null && $discordCredentials->getUser() !== $this) {
+            $discordCredentials->setUser($this);
+        }
+
+        $this->discordCredentials = $discordCredentials;
+
+        return $this;
+    }
+
+    public function getLastConnectionDate(): ?\DateTimeInterface
+    {
+        return $this->lastConnectionDate;
+    }
+
+    public function setLastConnectionDate(?\DateTimeInterface $lastConnectionDate): self
+    {
+        $this->lastConnectionDate = $lastConnectionDate;
 
         return $this;
     }

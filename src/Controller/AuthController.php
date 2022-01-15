@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\DiscordCredentials;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,6 +40,21 @@ class AuthController extends AbstractController
     }
 
     /**
+     * Manage hashing
+     * @return \Symfony\Component\PasswordHasher\PasswordHasherInterface
+     */
+    private function passwordHasher(): \Symfony\Component\PasswordHasher\PasswordHasherInterface
+    {
+        // Configure different password hashers via the factory
+        $factory = new PasswordHasherFactory([
+            'common' => ['algorithm' => 'bcrypt'],
+            'memory-hard' => ['algorithm' => 'sodium'],
+        ]);
+        // Retrieve the right password hasher by its name
+        return $factory->getPasswordHasher('common');
+
+    }
+    /**
      * @Route("/register", name="user.register")
      */
     public function register(Request $request): JsonResponse
@@ -55,16 +71,9 @@ class AuthController extends AbstractController
             $user->setRoles(['ROLE_USER']);
             $user->setCreationDate(new \DateTime());
 
-            // Configure different password hashers via the factory
-            $factory = new PasswordHasherFactory([
-                'common' => ['algorithm' => 'bcrypt'],
-                'memory-hard' => ['algorithm' => 'sodium'],
-            ]);
-            // Retrieve the right password hasher by its name
-            $passwordHasher = $factory->getPasswordHasher('common');
 
             $user->setPassword(
-                $passwordHasher->hash(
+                $this->passwordHasher()->hash(
                     $jsonData->password
                 )
             );
@@ -95,16 +104,59 @@ class AuthController extends AbstractController
     }
 
     /**
+     * @Route("/discord/register", name="user.discord.register")
+     */
+    public function loginDiscord(Request $request): JsonResponse
+    {
+        $jsonData = json_decode($request->getContent());
+        $user = $this->entityManager->getRepository(User::class)->find($jsonData->userId);
+
+        if ($user) {
+            /** @var User $user **/
+            if (!$user->getDiscordCredentials()) {
+                $discordCredentials = new DiscordCredentials();
+                $discordCredentials->setUser($user);
+
+                $discordCredentials->setAccessToken($jsonData->accessToken);
+                $discordCredentials->setRefreshToken($jsonData->refreshToken);
+                $this->entityManager->persist($discordCredentials);
+                $this->entityManager->flush();
+            } else {
+                // If the discord credentials exists or were created
+                $discordCredentialsId = $user->getDiscordCredentials()->getId();
+                $discordCredentials = $this->entityManager->getRepository(DiscordCredentials::class)->findOneBy(['id' => $discordCredentialsId, 'user' => $user]);
+                /** @var DiscordCredentials $discordCredentials **/
+                $discordCredentials->setAccessToken($jsonData->accessToken);
+                $discordCredentials->setRefreshToken($jsonData->refreshToken);
+                $this->entityManager->persist($discordCredentials);
+                $this->entityManager->flush();
+            }
+            return new JsonResponse(
+                'Discord account linked'
+                , 200);
+        }
+        return new JsonResponse(
+            'Discord account not linked'
+            , 500);
+    }
+
+    /**
      * @Route("/profile", name="user.profile")
      */
     public function profile(): JsonResponse
     {
         $currentUser = $this->security->getUser();
-        $user = $this->serializer->serialize($currentUser, 'json');
+        /** @var User $currentUser */
+        if ($currentUser) {
+            $currentUser->setLastConnectionDate(new \DateTime());
+            $this->entityManager->persist($currentUser);
+            $this->entityManager->flush();
 
-        return new JsonResponse([
-            $user
-        ], 200);
+            $user = $this->serializer->serialize($currentUser, 'json', ['groups' => ['user', 'discord_credentials']]);
+            return new JsonResponse([
+                $user
+            ], 200);
+        }
+        return new JsonResponse('You need to be authenticated', 500);
     }
-
 }

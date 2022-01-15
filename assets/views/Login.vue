@@ -26,11 +26,14 @@
 <script>
 import {mapActions} from "vuex";
 import '../styles/components/form.scss'
-
+import Button from "../components/Button";
 
 
 export default {
   name: "Login",
+  components: {
+    Button
+  },
   created() {
     this.isUserCreated = this.$route.params.registerStatus === 'created';
   },
@@ -53,7 +56,8 @@ export default {
         this.$router.replace({
           name: 'dashboard',
         })
-        console.log(r)
+      }).catch(err => {
+        this.errors.push('Identifiant ou mot de passe inconnu')
       })
     }
   }
@@ -61,5 +65,9 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
+.discord {
+  color: white;
+  font-weight: 600;
+  text-align: center;
+}
 </style>

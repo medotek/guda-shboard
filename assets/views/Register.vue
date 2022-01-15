@@ -65,13 +65,6 @@ export default {
     submit() {
       this.errors = [];
 
-      if (this.matchingPassword) {
-        let index = this.errors.indexOf('Les mots de passe ne correspondent pas');
-        this.errors.splice(index, 1);
-      } else {
-        this.errors.push('Les mots de passe ne correspondent pas');
-      }
-
       if (this.passwordStrength && this.matchingPassword) {
         this.register(this.form).then((res) => {
           if (res.status === 201) {

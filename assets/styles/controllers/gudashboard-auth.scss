@@ -1,0 +1,144 @@
+/*********************[LOGIN CSS]***************************/
+
+.gi-container {
+  position: relative;
+}
+
+.login-page {
+
+  .form-container {
+    background-color: white;
+    border-radius: 30px;
+    padding: 50px;
+    margin: 50px auto;
+
+
+    form {
+      width: 500px;
+      margin: 0 auto 50px;
+      font-family: 'Poppins', sans-serif;
+
+      h1 {
+        margin: 0 auto;
+        width: 500px
+      }
+
+      input {
+        font-size: 18px;
+        margin: 20px 0;
+        width: 100%;
+        padding: 10px 10px;
+        border-style: none;
+        border-bottom: 4px solid var(--guda-light-blue);
+      }
+
+      #checkbox {
+        width: auto;
+      }
+
+      .checkbox-label {
+        width: auto;
+      }
+
+      input:focus {
+        outline: none;
+        background-color: var(--guda-grey);
+        color: var(--guda-color);
+        border-bottom: 4px solid var(--guda-color);
+      }
+
+      input[type=text]:focus {
+        border: 2px solid var(--guda-color);
+      }
+
+      button {
+        background-color: var(--guda-color);
+        border-radius: 10px;
+        border: none;
+        width: 100%;
+        padding: 10px 15px;
+        color: var(--text-primary-color);
+        font-size: 18px;
+      }
+
+
+      .register-link {
+        margin-top: 15px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .login-page {
+    .form-container {
+      border-radius: 10px;
+      margin-top: 20px;
+      padding: 30px 20px;
+
+
+      form {
+        width: 100%;
+
+        h1 {
+          width: 80vw;
+        }
+
+        input {
+          font-size: 14px;
+        }
+
+        .register-link {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .login-page {
+    .form-container {
+      padding: 50px 0;
+
+      h1 {
+        max-width: 350px;
+      }
+
+      form {
+        max-width: 350px;
+
+        input {
+          max-width: 350px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (min-width: 950px) {
+  .login-page {
+    .form-container {
+      h1 {
+        max-width: 500px;
+      }
+
+      form {
+        max-width: 500px;
+
+        input {
+          max-width: 500px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (min-width: 1199px) {
+  .login-page {
+    .form-container {
+      padding: 50px;
+    }
+  }
+}

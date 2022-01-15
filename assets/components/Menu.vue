@@ -7,6 +7,7 @@
       <Button title="Inscription" v-if="!isAuthenticated" routeName="register"/>
       <Button title="Connexion" v-if="!isAuthenticated" routeName="login"/>
       <Button title="Dashboard" v-if="isAuthenticated" routeName="dashboard"/>
+      <Button title="Mon compte" v-if="isAuthenticated" routeName="account"/>
       <!--      Exception pour ce bouton natif-->
       <button class="button button-primary button-route" v-if="isAuthenticated" @click="submit">Logout</button>
       <p v-if="isAuthenticated">Salut <span class="username">{{ username }}</span></p>

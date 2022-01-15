@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block body %}
+    <div class="login-page">
+        <div class="form-container">
+            <form method="post">
+                {% if error %}
+                    <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                {% endif %}
+
+                <h1 class="h3 mb-3 font-weight-normal">Connexion</h1>
+                <label for="inputEmail"></label><input placeholder="Nom d'utilisateur" type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control"
+                                                       required
+                                                       autofocus><br>
+                <label for="inputPassword"></label><input placeholder="Mot de passe" type="password" name="password" id="inputPassword"
+                                                          class="form-control" required>
+
+                <input type="hidden" name="_csrf_token"
+                       value="{{ csrf_token('authenticate') }}"
+                >
+                <input id="checkbox" type="checkbox" name="_remember_me">
+                <label class="checkbox-label" for="checkbox">
+                    Se souvenir de moi
+                </label>
+
+
+                <button class="btn btn-lg btn-primary" type="submit">
+                    Se connecter
+                </button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

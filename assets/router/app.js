@@ -8,6 +8,7 @@ import store from "../store/app";
 import Account from "../views/Account";
 import NotFound from "../components/NotFound";
 import DiscordOauth2 from "../components/DiscordOauth2";
+import Discord from "../components/Discord";
 
 Vue.use(VueRouter)
 
@@ -77,11 +78,26 @@ const routes = [
     {
         path: '/discord',
         name: 'discord',
+        // component: Discord,
+        component: {
+            // render router-view into parent
+            render(c) {
+                return c('router-view');
+            }
+        },
+        beforeEnter: (to, from, next) => {
+            if (!store.getters['auth/isAuthenticated']) {
+                return next({
+                    name: 'login'
+                })
+            }
+            next()
+        },
         children: [
             {
                 path: 'auth',
                 name: 'discord.auth',
-                component: DiscordOauth2
+                component: DiscordOauth2,
             }
         ]
     },

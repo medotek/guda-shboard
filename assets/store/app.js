@@ -7,24 +7,17 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
     state: {
-        isLoading: false,
-        isPasswordStrong: false
+        isLoading: false
     },
     getters: {
         getLoading(state) {
           return state.isLoading
-        },
-        getPasswordStrength(state) {
-            return state.isPasswordStrong
         }
     },
     mutations: {
         setLoading(state, newLoadingState) {
             state.isLoading = newLoadingState
-        },
-        setPasswordStrength(state, newPasswordStrengthState) {
-            state.isPasswordStrong = newPasswordStrengthState
-        },
+        }
     },
     actions: {
 
