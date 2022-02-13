@@ -3,19 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
-use ContainerOcq7WVR\getSecurity_EncoderFactory_GenericService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Security\Core\Encoder\EncoderFactory;
-use Symfony\Component\Security\Core\Encoder\EncoderFactoryInterface;
-use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
-use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use function Couchbase\defaultEncoder;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
@@ -95,12 +89,24 @@ class User implements UserInterface
      */
     private $lastConnectionDate;
 
+    /**
+     * @ORM\ManyToMany(targetEntity=DiscordWebhook::class, mappedBy="users")
+     */
+    private $discordWebhooks;
+
+    /**
+     * @ORM\OneToMany(targetEntity=DiscordWebhook::class, mappedBy="owner")
+     */
+    private $discordOwnedWehbooks;
+
     public function __construct()
     {
         $this->discordEmbedMessages = new ArrayCollection();
         $this->discordGroupedMessages = new ArrayCollection();
         $this->teams = new ArrayCollection();
         $this->teamsCreated = new ArrayCollection();
+        $this->discordWebhooks = new ArrayCollection();
+        $this->discordOwnedWehbooks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -336,6 +342,63 @@ class User implements UserInterface
     public function setLastConnectionDate(?\DateTimeInterface $lastConnectionDate): self
     {
         $this->lastConnectionDate = $lastConnectionDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|DiscordWebhook[]
+     */
+    public function getDiscordWebhooks(): Collection
+    {
+        return $this->discordWebhooks;
+    }
+
+    public function addDiscordWebhook(DiscordWebhook $discordWebhook): self
+    {
+        if (!$this->discordWebhooks->contains($discordWebhook)) {
+            $this->discordWebhooks[] = $discordWebhook;
+            $discordWebhook->addUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDiscordWebhook(DiscordWebhook $discordWebhook): self
+    {
+        if ($this->discordWebhooks->removeElement($discordWebhook)) {
+            $discordWebhook->removeUser($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|DiscordWebhook[]
+     */
+    public function getDiscordOwnedWehbooks(): Collection
+    {
+        return $this->discordOwnedWehbooks;
+    }
+
+    public function addDiscordOwnedWehbook(DiscordWebhook $discordOwnedWehbook): self
+    {
+        if (!$this->discordOwnedWehbooks->contains($discordOwnedWehbook)) {
+            $this->discordOwnedWehbooks[] = $discordOwnedWehbook;
+            $discordOwnedWehbook->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDiscordOwnedWehbook(DiscordWebhook $discordOwnedWehbook): self
+    {
+        if ($this->discordOwnedWehbooks->removeElement($discordOwnedWehbook)) {
+            // set the owning side to null (unless already changed)
+            if ($discordOwnedWehbook->getOwner() === $this) {
+                $discordOwnedWehbook->setOwner(null);
+            }
+        }
 
         return $this;
     }

@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import auth from './auth'
-import Register from "../views/Register";
+import discord from "./discord";
 
 Vue.use(Vuex)
 
@@ -23,6 +23,7 @@ export default new Vuex.Store({
 
     },
     modules: {
-        auth
+        auth,
+        discord
     }
 })

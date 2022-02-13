@@ -41,11 +41,11 @@ export default {
   }
 }
 
-@media screen and (min-width: 1200px) {
-  #content {
-    padding: 0 150px;
-  }
-}
+//@media screen and (min-width: 1200px) {
+//  #content {
+//    padding: 0 150px;
+//  }
+//}
 
 #main {
   display: flex;
@@ -53,7 +53,7 @@ export default {
   #content {
     width: 100%;
     position: relative;
-    background-color: var(--guda-content)
+    background-color: var(--guda-grey)
   }
 }
 

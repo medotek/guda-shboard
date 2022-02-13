@@ -57,6 +57,7 @@ export default {
           name: 'dashboard',
         })
       }).catch(err => {
+        this.errors = []
         this.errors.push('Identifiant ou mot de passe inconnu')
       })
     }

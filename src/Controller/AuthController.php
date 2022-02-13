@@ -54,6 +54,7 @@ class AuthController extends AbstractController
         return $factory->getPasswordHasher('common');
 
     }
+
     /**
      * @Route("/register", name="user.register")
      */

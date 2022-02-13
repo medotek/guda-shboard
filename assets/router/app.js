@@ -9,6 +9,8 @@ import Account from "../views/Account";
 import NotFound from "../components/NotFound";
 import DiscordOauth2 from "../components/DiscordOauth2";
 import Discord from "../components/Discord";
+import WebhookFeatures from "../views/WebhookFeatures";
+import WebhookForm from "../components/webhook/WebhookForm";
 
 Vue.use(VueRouter)
 
@@ -101,6 +103,26 @@ const routes = [
             }
         ]
     },
+    {
+        path: '/webhooks',
+        name: 'webhooks',
+        component: WebhookFeatures,
+        beforeEnter: (to, from, next) => {
+            if (!store.getters['auth/isAuthenticated']) {
+                return next({
+                    name: 'login'
+                })
+            }
+            next()
+        },
+        children: [
+            {
+                path: 'new',
+                name: 'webhooks.new',
+                component: WebhookForm,
+            }
+        ]
+    }
 ]
 
 const router = new VueRouter({

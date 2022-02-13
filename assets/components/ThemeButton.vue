@@ -61,7 +61,7 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style scoped lang="scss">
 .switch-checkbox {
   display: none;
 }
@@ -82,6 +82,7 @@ export default {
   width: var(--element-size);
   z-index: 1;
   margin: 0 auto;
+  box-sizing: content-box;
 }
 
 .switch-toggle {

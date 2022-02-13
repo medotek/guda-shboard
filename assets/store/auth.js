@@ -51,7 +51,7 @@ export default {
                 let response = await axios.post('/discord/register', data).catch((e) => {
                         console.log(e);
                     })
-                return dispatch('attempt', this.isAuthenticated.token)
+                return dispatch('attempt', 'discord')
             } else {
                 return next({
                     name: 'login'
@@ -59,7 +59,7 @@ export default {
             }
         },
         async attempt({commit, state}, token) {
-            if (token) {
+            if (token && token !== 'discord') {
                 commit('setToken', token)
             }
 
@@ -77,7 +77,7 @@ export default {
                 commit('setToken', null)
             }
 
-            if (user) {
+            if (user && token === 'discord') {
                 // Commit Discord User - Session
                 try {
                     let response = await axios.get(
@@ -121,6 +121,12 @@ export default {
             commit('setDiscordUser', null)
             commit('setToken', null)
             store.commit('setLoading', false)
+        },
+        async revoke({commit}, token) {
+            return await axios.post('http://localhost:3333/api/auth/discord/revoke?access_token='+token).then((res) => {
+                commit('setDiscordUser', null)
+                return res
+            }).catch(e => {console.log(e)})
         }
     }
 }

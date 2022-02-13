@@ -1,6 +1,5 @@
 <template>
   <div>
-    <h1>Sync discord to db</h1>
   </div>
 </template>
 
