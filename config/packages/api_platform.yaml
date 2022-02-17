@@ -19,3 +19,7 @@ api_platform:
 
             # Default values of the "Vary" HTTP header.
             vary: [ 'Accept' ]
+    enable_swagger: true
+
+    # Enable Swagger UI.
+    enable_swagger_ui: true

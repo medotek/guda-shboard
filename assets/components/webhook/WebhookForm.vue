@@ -54,16 +54,14 @@ export default {
   },
   methods: {
     ...mapActions({
-      getDiscordWebhook: 'discord/getDiscordWebhook'
+      setDiscordWebhook: 'discord/setDiscordWebhook'
     }),
     async submit() {
       this.errors =[]
       // Set user id
       this.form.userId = this.user.id
 
-      await this.getDiscordWebhook(this.form).then(r => {
-        console.log(r.data)
-
+      await this.setDiscordWebhook(this.form).then(r => {
         switch (r.status) {
           case (200):
             if (r.data.message === 'created') {

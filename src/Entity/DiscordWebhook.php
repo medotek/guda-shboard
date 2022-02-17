@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiProperty;
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\DiscordWebhookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,8 +13,16 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     collectionOperations={"get"},
- *     itemOperations={"get"},
+ *     collectionOperations={
+ *          "get","custom_discord_webhooks_list"={
+ *              "route_name"="discord_webhook_list"
+ *              }
+ *      },
+ *     itemOperations={
+ *          "get","custom_discord_webhooks_item"={
+ *              "route_name"="discord_webhook_item"
+ *              }
+ *      },
  *     normalizationContext={"groups"={"discord_webhook:read"}},
  *     denormalizationContext={"groups"={"discord_webhook:write"}}
  * )
@@ -58,7 +67,6 @@ class DiscordWebhook
     private $owner;
 
     /**
-     * @Groups("discord_webhook:read")
      * @ORM\Column(type="string", length=500)
      */
     private $token;
@@ -198,18 +206,5 @@ class DiscordWebhook
         $this->guildId = $guildId;
 
         return $this;
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'webhookId' => $this->webhookId,
-            'channelId' => $this->channelId,
-            'guildId' => $this->guildId,
-            'token' => $this->token,
-            'avatarId' => $this->avatarId,
-        ];
     }
 }

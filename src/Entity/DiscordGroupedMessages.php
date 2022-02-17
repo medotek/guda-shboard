@@ -11,7 +11,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     collectionOperations={"get"},
+ *     collectionOperations={},
  *     itemOperations={"get"},
  *     normalizationContext={"groups"={"discord_grouped_messages:read"}},
  *     denormalizationContext={"groups"={"discord_embed_message:write"}}

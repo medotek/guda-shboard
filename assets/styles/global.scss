@@ -1,6 +1,6 @@
 :root {
-  --background-color-primary: #ebebeb;
-  --background-color-secondary: white;
+  --background-color-primary: white;
+  --background-color-secondary: #ebebeb;
   --background-menu: white;
   --accent-color: #cacaca;
   --text-primary-color: #222;
@@ -10,9 +10,12 @@
   --guda-light-blue: #D1DCF1;
   --guda-grey: #F7F7F7;
   --guda-accent-color: #F7F7F7;
-  --guda-dark-blue: #24286E;
+  --guda-dark-blue: #98ced3;
   --guda-discord: #36393e;
   --guda-discord-darker: #2f3136;
+  --guda-discord-background: #36393f;
+  --guda-discord-background-embed: #2f3136;
+  --guda-discord-placeholder: #40444b;
   --guda-discord-field: #72767d;
   --guda-discord-hover: #32353b;
   --guda-password-metter: #ddd;
@@ -26,17 +29,20 @@
   --background-color-secondary: #39393b;
   --background-menu: #151515;
   --accent-color: #3f3f3f;
-  --text-primary-color: #ddd;
+  --text-primary-color: white; //#ddd
   --guda-color: #ff6132;
   --guda-content: #1f1e1e;
   --guda-light-blue: #D1DCF1;
   --guda-grey: #1f1e1e;
   --guda-accent-color: #ffd2b5;
-  --guda-dark-blue: #24286E;
+  --guda-dark-blue: #98ced3;
   --guda-discord: #36393e;
   --guda-discord-darker: #2f3136;
+  --guda-discord-background: #36393f;
+  --guda-discord-background-embed: #2f3136;
   --guda-discord-field: #72767d;
   --guda-discord-hover: #32353b;
+  --guda-discord-placeholder: #40444b;
   --guda-password-metter: #2e2e2e;
   --guda-warning-color: #ff2f2f;
   --guda-success-color: #44e77bfa;

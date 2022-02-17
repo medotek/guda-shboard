@@ -7,7 +7,7 @@ export default {
     getters: {},
     mutations: {},
     actions: {
-        async getDiscordWebhook(_, form) {
+        async setDiscordWebhook(_, form) {
             store.commit('setLoading', true)
             return axios.post('/discord/webhook/new', form).then((res) => {
                 store.commit('setLoading', false)
@@ -21,10 +21,23 @@ export default {
         /**
          * Get a list of discord webhook of the user
          */
-        async getWebhooksList(_, userId) {
-            return axios.post('/discord/webhook/list', userId).then((res) => {
+        async getWebhooksList(_, page) {
+            return axios.get(`/discord/webhook/list?page=${page}`).then((res) => {
                 return res
             })
-        }
+        },
+        async getWebhookDetail(_, webhookId) {
+            return axios.get(`/discord/webhook/${webhookId}`).then((res) => {
+                return res
+            })
+        },
+        // /**
+        //  * With (decrypted) token
+        //  */
+        // async getWebhookCredentials(_, webhookId) {
+        //     return axios.get(`/discord/webhook/${webhookId}`).then((res) => {
+        //         return res
+        //     })
+        // }
     },
 }

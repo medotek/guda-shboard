@@ -8,6 +8,11 @@
           <div class="label"><font-awesome-icon icon="fa-brands fa-discord"/>Webhooks</div>
         </div>
       </b-link>
+      <b-link :to="{ path:'hoyolab' }">
+        <div class="dashboard-feature-card">
+          <div class="label">Hoyolab</div>
+        </div>
+      </b-link>
     </div>
 
     <router-view></router-view>
@@ -24,14 +29,17 @@ export default {
 
 <style scoped lang="scss">
 .dashboard-page {
-  .dashboard-title {
-    margin: 3rem 0;
-  }
 
   .dashboard-features {
+    display: flex;
     background-color: var(--background-menu);
     border-radius: 0.5rem;
     padding: 0.625rem;
+
+    a {
+      text-decoration: none;
+      margin-right: 1rem;
+    }
 
     .dashboard-feature-card {
       background-color: var(--guda-color);

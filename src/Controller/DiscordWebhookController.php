@@ -40,7 +40,7 @@ class DiscordWebhookController extends AbstractController
         UserRepository           $userRepository,
         SerializerInterface      $serializer,
         EntityManagerInterface   $entityManager,
-        Security $security
+        Security                 $security
     )
     {
         $this->client = $client;
@@ -56,12 +56,12 @@ class DiscordWebhookController extends AbstractController
      * @param $string
      * @return false|string
      */
-    private function encrypt($string)
+    private function encrypt($string, $key)
     {
         $ciphering = "AES-128-CTR";
         $options = 0;
         $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong";
+        $encryption_key = "GudaIsStrong" . $key;
         return openssl_encrypt($string, $ciphering,
             $encryption_key, $options, $encryption_iv);
 
@@ -72,12 +72,12 @@ class DiscordWebhookController extends AbstractController
      * @param $string
      * @return false|string
      */
-    private function decrypt($string)
+    private function decrypt($string, $key)
     {
         $ciphering = "AES-128-CTR";
         $options = 0;
         $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong";
+        $encryption_key = "GudaIsStrong" . $key;
         return openssl_decrypt($string, $ciphering,
             $encryption_key, $options, $encryption_iv);
     }
@@ -112,7 +112,7 @@ class DiscordWebhookController extends AbstractController
                     $discordWebhook->setAvatarId($content['avatar']);
                     $discordWebhook->setChannelId($content['channel_id']);
                     $discordWebhook->setGuildId($content['guild_id']);
-                    $discordWebhook->setToken($this->encrypt($content['token']));
+                    $discordWebhook->setToken($this->encrypt($content['token'], $existingUser->getCreationDate()->getTimestamp()));
                     $discordWebhook->setOwner($existingUser);
                     // Persist discordWebhook
                     $this->entityManager->persist($discordWebhook);
@@ -133,7 +133,11 @@ class DiscordWebhookController extends AbstractController
     }
 
     /**
-     * @Route("/discord/webhook/list", name="discord_webhook_list")
+     * @Route(
+     *     name="discord_webhook_list",
+     *     path="/discord/webhook/list",
+     *     defaults={"_api_collection_operation_name"="get"}
+     * )
      */
     public function getWebhooksList(): Response
     {
@@ -142,22 +146,39 @@ class DiscordWebhookController extends AbstractController
         $webhooks = $this->discordWebhookRepository->findBy(["owner" => $user]);
 
         if (!empty($webhooks) && $user) {
-            $arrayWebhooks = new ArrayCollection($webhooks);
-            // Decrypt token
-            foreach ($arrayWebhooks->toArray() as $key => $webhook) {
-                $arrayWebhooks->remove($key);
-                /** @var DiscordWebhook $webhook */
-                $webhook->setToken($this->decrypt($webhook->getToken()));
-                $arrayWebhooks->add($webhook);
-            }
 
             return $this->json([
-                'webhooks' => $this->serializer->serialize($arrayWebhooks, 'json')
+                'webhooks' => $this->serializer->serialize($webhooks, 'json')
             ]);
         }
 
         return $this->json([
             'error' => 'No webhooks found'
+        ], 400);
+    }
+
+    /**
+     * @Route(
+     *     name="discord_webhook_item",
+     *     path="/discord/webhook/{id}",
+     *     defaults={"_api_item_operation_name"="get"}
+     * )
+     */
+    public function getWebhook(int $id): Response
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        $webhook = $this->discordWebhookRepository->findOneBy(["owner" => $user, 'id' => $id]);
+
+        if (!empty($webhook) && $user) {
+            // Decrypt token
+//            $webhook->setToken($this->decrypt($webhook->getToken(), $user->getCreationDate()->getTimestamp()));
+
+            return $this->json($this->serializer->serialize($webhook, 'json'));
+        }
+
+        return $this->json([
+            'error' => 'No webhook found'
         ], 400);
     }
 }

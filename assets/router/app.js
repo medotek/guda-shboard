@@ -11,6 +11,9 @@ import DiscordOauth2 from "../components/DiscordOauth2";
 import Discord from "../components/Discord";
 import WebhookFeatures from "../views/WebhookFeatures";
 import WebhookForm from "../components/webhook/WebhookForm";
+import WebhookDetail from "../components/webhook/WebhookDetail";
+import DiscordMessage from "../components/discord/message/DiscordMessage";
+import Hoyolab from "../views/Hoyolab";
 
 Vue.use(VueRouter)
 
@@ -100,7 +103,17 @@ const routes = [
                 path: 'auth',
                 name: 'discord.auth',
                 component: DiscordOauth2,
-            }
+            },
+            {
+                path: 'message/webhook/:id/new',
+                name: 'discord.webhook.message.new',
+                component: DiscordMessage,
+            },
+            {
+                path: 'message/webhook/:id/edit',
+                name: 'discord.webhook.message.edit',
+                component: DiscordMessage,
+            },
         ]
     },
     {
@@ -120,9 +133,34 @@ const routes = [
                 path: 'new',
                 name: 'webhooks.new',
                 component: WebhookForm,
+            },
+            {
+                path: 'edit/:id',
+                name: 'webhooks.edit',
+                component: WebhookForm,
+            },
+            {
+                path: 'detail/:id',
+                name: 'webhooks.detail',
+                component: WebhookDetail,
             }
         ]
+    },
+    {
+        path: '/hoyolab',
+        name: 'hoyolab',
+        component: Hoyolab,
+        beforeEnter: (to, from, next) => {
+            if (!store.getters['auth/isAuthenticated']) {
+                return next({
+                    name: 'login'
+                })
+            }
+            next()
+        },
+        children: []
     }
+
 ]
 
 const router = new VueRouter({

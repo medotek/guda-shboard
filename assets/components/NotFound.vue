@@ -5,8 +5,13 @@
 </template>
 
 <script>
+import store from "../store/app";
+
 export default {
-  name: "NotFound"
+  name: "NotFound",
+  created() {
+    store.commit('setLoading', false)
+  }
 }
 </script>
 

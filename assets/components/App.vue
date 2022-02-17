@@ -51,18 +51,20 @@ export default {
   display: flex;
 
   #content {
-    width: 100%;
+    width: calc(100% - 220px);
+    min-height: 100vh;
+    margin-left: 220px;
     position: relative;
     background-color: var(--guda-grey)
   }
 }
 
 .loading {
-  position: absolute;
+  position: fixed;
   top: 0;
-  left: 0;
+  right: 0;
   background-color: var(--background-color-primary);
-  width: 100vw;
+  width: calc(100vw - 220px);
   height: 100vh;
   z-index: 99
 }

@@ -95,9 +95,15 @@ class User implements UserInterface
     private $discordWebhooks;
 
     /**
-     * @ORM\OneToMany(targetEntity=DiscordWebhook::class, mappedBy="owner")
+     *
+     * @ORM\OneToMany(targetEntity=DiscordWebhook::class, mappedBy="owner", cascade={"persist"}, orphanRemoval=true)
      */
     private $discordOwnedWehbooks;
+
+    /**
+     * @ORM\OneToMany(targetEntity=HoyolabPost::class, mappedBy="user")
+     */
+    private $hoyolabPosts;
 
     public function __construct()
     {
@@ -107,6 +113,7 @@ class User implements UserInterface
         $this->teamsCreated = new ArrayCollection();
         $this->discordWebhooks = new ArrayCollection();
         $this->discordOwnedWehbooks = new ArrayCollection();
+        $this->hoyolabPosts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -397,6 +404,36 @@ class User implements UserInterface
             // set the owning side to null (unless already changed)
             if ($discordOwnedWehbook->getOwner() === $this) {
                 $discordOwnedWehbook->setOwner(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|HoyolabPost[]
+     */
+    public function getHoyolabPosts(): Collection
+    {
+        return $this->hoyolabPosts;
+    }
+
+    public function addHoyolabPost(HoyolabPost $hoyolabPost): self
+    {
+        if (!$this->hoyolabPosts->contains($hoyolabPost)) {
+            $this->hoyolabPosts[] = $hoyolabPost;
+            $hoyolabPost->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHoyolabPost(HoyolabPost $hoyolabPost): self
+    {
+        if ($this->hoyolabPosts->removeElement($hoyolabPost)) {
+            // set the owning side to null (unless already changed)
+            if ($hoyolabPost->getUser() === $this) {
+                $hoyolabPost->setUser(null);
             }
         }
 

@@ -9,7 +9,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     collectionOperations={"get"},
+ *     collectionOperations={},
  *     itemOperations={"get"},
  *     normalizationContext={"groups"={"discord_embed_message:read"}},
  *     denormalizationContext={"groups"={"discord_embed_message:write"}}
@@ -70,7 +70,7 @@ class DiscordEmbedMessage
 
     /**
      * @ORM\ManyToOne(targetEntity=DiscordGroupedMessages::class, inversedBy="discordMessage")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      */
     private $discordGroupedMessages;
 

@@ -1,6 +1,9 @@
 <template>
   <div id="side-menu">
-    <div class="guda"><span>Gudabot</span></div>
+    <div class="guda">
+      <span>Gudabot</span><br>
+      <span class="version">ver. Gudalpha-8c</span>
+    </div>
     <theme-button/>
     <div id="side-menu-routes">
       <Button title="Accueil" routeName="home"/>
@@ -54,6 +57,9 @@ export default {
 @import '../styles/global.scss';
 
 #side-menu {
+  position: fixed;
+  left: 0;
+  z-index: 1;
   height: 100vh;
   width: 220px;
   background: var(--background-menu);
@@ -66,6 +72,16 @@ export default {
     width: 100%;
     text-align: center;
     padding-top: 15px;
+    position: relative;
+    margin-bottom: 2rem;
+
+    .version {
+      color: var(--text-primary-color);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+    }
   }
 
   #side-menu-routes {
@@ -75,7 +91,6 @@ export default {
     vertical-align: middle;
     justify-content: center;
     padding: 0 10px;
-    width: 200px;
     color:white;
 
     .username {
