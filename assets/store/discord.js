@@ -31,13 +31,22 @@ export default {
                 return res
             })
         },
-        // /**
-        //  * With (decrypted) token
-        //  */
-        // async getWebhookCredentials(_, webhookId) {
-        //     return axios.get(`/discord/webhook/${webhookId}`).then((res) => {
-        //         return res
-        //     })
-        // }
+        /**
+         *
+         * @param _
+         * @param url
+         * @param isList
+         */
+        async setHoyolabPost(_, url, isList) {
+            let newUrl = new URL(url);
+            let params ='?'
+            if (isList) {params += 'list=true'} else {params += 'post=true'}
+            let id = url.substring(url.lastIndexOf('/') + 1);
+            if (!id ||typeof parseInt(id) !== 'number' || newUrl.origin !== 'https://www.hoyolab.com')
+                return {status:400, error:'error thrown'}
+            return axios.post(`/hoyolab/post/new/${id}${params}`).then((res) => {
+                return res
+            })
+        }
     },
 }
