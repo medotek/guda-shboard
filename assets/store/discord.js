@@ -31,17 +31,19 @@ export default {
                 return res
             })
         },
-        /**
-         *
-         * @param _
-         * @param url
-         * @param isList
-         */
-        async setHoyolabPost(_, url, isList) {
-            let newUrl = new URL(url);
+        async setHoyolabPost(_, data) {
+            let newUrl = new URL(data.url);
+            let isList = data.isList
             let params ='?'
-            if (isList) {params += 'list=true'} else {params += 'post=true'}
-            let id = url.substring(url.lastIndexOf('/') + 1);
+            let id = ''
+            if (isList) {
+                id = newUrl.searchParams.get('id') ?? ''
+                params += 'list=true'
+            } else {
+                id = data.url.substring(data.url.lastIndexOf('/') + 1);
+                params += 'post=true'
+            }
+
             if (!id ||typeof parseInt(id) !== 'number' || newUrl.origin !== 'https://www.hoyolab.com')
                 return {status:400, error:'error thrown'}
             return axios.post(`/hoyolab/post/new/${id}${params}`).then((res) => {

@@ -3,20 +3,27 @@
     <h1>Fonctionnalités hoyolab</h1>
 
     <div class="guda-success" v-if="postAddedSuccessfully">
-      Ajout {{isList ? 'des articles' : 'de l\'article'}} avec succès
+      Ajout {{ isList ? 'de ' + responseCount + ' posts' : 'de l\'article' }} avec succès
     </div>
     <div class="hoyolab-manage">
       <ul class="guda-errors" v-if="errors.length">
         <li class="guda-error" v-for="error in errors">{{ error }}</li>
       </ul>
-      <button class="button button-primary" @click="addPostsButton">{{ modal ? clickedAddPostMessage : addPostMessage }}</button>
+      <button class="button button-primary" @click="addPostsButton">{{
+          modal ? clickedAddPostMessage : addPostMessage
+        }}
+      </button>
       <form id="hoyolab-post-new" @submit="submitAddHoyoPost" v-if="modal">
-        <span class="button button-secondary" v-if="isPost && isList || !isPost && !isList"
-                @click="isPost = true">{{ isPostMessage }}</span>
-        <span class="button button-secondary" v-if="isPost && isList || !isPost && !isList"
-                @click="isList = true">{{ isListMessage }}</span>
+        <div class="hoyolab-post-choice">
+          <div class="button button-secondary" v-if="isPost && isList || !isPost && !isList"
+               @click="isPost = true">{{ isPostMessage }}
+          </div>
+          <div class="button button-secondary" v-if="isPost && isList || !isPost && !isList"
+               @click="isList = true">{{ isListMessage }}
+          </div>
+        </div>
         <input type="url" name="url" class="" v-if="isPost || isList">
-        <button class="button button-secondary" type="submit" v-if="isPost || isList" >Ajouter</button>
+        <button class="button button-secondary" type="submit" v-if="isPost || isList">Ajouter</button>
       </form>
     </div>
   </div>
@@ -36,9 +43,14 @@ export default {
       this.errors = []
       e.preventDefault()
       let formData = new FormData(e.target)
-      return this.setHoyolabPost(formData.get('url'), this.isList).then(res => {
+      let data = {
+        url: formData.get('url'),
+        isList: this.isList
+      }
+      return this.setHoyolabPost(data).then(res => {
         if (res.status === 200) {
           this.postAddedSuccessfully = true
+          this.responseCount = res.data.count
         } else {
           this.errors.push(res.error)
         }
@@ -58,6 +70,7 @@ export default {
   data() {
     return {
       postAddedSuccessfully: false,
+      responseCount: 0,
       errors: [],
       modal: false,
       isPostMessage: 'Lien de votre article',
@@ -71,6 +84,15 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+form {
+  padding: 0;
+}
+.hoyolab-post-choice {
+  display: flex;
 
+  div {
+    text-align: center;
+  }
+}
 </style>

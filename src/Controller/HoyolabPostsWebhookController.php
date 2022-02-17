@@ -31,9 +31,9 @@ class HoyolabPostsWebhookController extends AbstractController
     private EntityManagerInterface $entityManager;
 
     public function __construct(
-        HttpClientInterface $client,
-        HoyolabPostRepository $hoyolabPostRepository,
-        Security $security,
+        HttpClientInterface    $client,
+        HoyolabPostRepository  $hoyolabPostRepository,
+        Security               $security,
         EntityManagerInterface $entityManager
     )
     {
@@ -81,11 +81,12 @@ class HoyolabPostsWebhookController extends AbstractController
             try {
                 $post = $response->toArray();
 
+                $i = 0;
                 // Verify if the url is a post
                 if ($postParams && array_key_exists('post', $post['data'])) {
                     $postData = $post['data']['post']['post'];
                     $statsData = $post['data']['post']['stat'];
-                    $existsHoyolabPosts = $this->hoyolabPostRepository->find($id);
+                    $existsHoyolabPosts = $this->hoyolabPostRepository->findOneBy(['postId' => $id]);
 
                     if ($existsHoyolabPosts) {
                         return $this->json([
@@ -93,15 +94,14 @@ class HoyolabPostsWebhookController extends AbstractController
                         ], 400);
                     }
                     $this->setHoyolabPostEntity($postData, $statsData, $user);
-                } else if ($listParams && array_key_exists('list', $post['data'])){
+                } else if ($listParams && array_key_exists('list', $post['data'])) {
                     if (!empty($list = $post['data']['list'])) {
-                        foreach($list as $post) {
+                        foreach ($list as $post) {
                             $postData = $post['post'];
                             $statsData = $post['stat'];
-                            if ((int) $postData['post_id'] &&
-                                !$this->hoyolabPostRepository->find((int) $postData['post_id'])
-                            ) {
+                            if ((int)$postData['post_id'] && !$this->hoyolabPostRepository->findOneBy(['postId' => $postData['post_id']])) {
                                 $this->setHoyolabPostEntity($postData, $statsData, $user);
+                                $i++;
                             }
                         }
                     }
@@ -110,15 +110,16 @@ class HoyolabPostsWebhookController extends AbstractController
                 $this->entityManager->flush();
 
                 return $this->json([
-                    'message' => 'success'
+                    'message' => 'success',
+                    'count' => $i
                 ]);
 
             } catch (
-                ClientExceptionInterface|
-                RedirectionExceptionInterface|
-                ServerExceptionInterface|
-                DecodingExceptionInterface|
-                TransportExceptionInterface $e
+            ClientExceptionInterface|
+            RedirectionExceptionInterface|
+            ServerExceptionInterface|
+            DecodingExceptionInterface|
+            TransportExceptionInterface|\Exception $e
             ) {
             }
 
@@ -136,7 +137,8 @@ class HoyolabPostsWebhookController extends AbstractController
      * @return void
      * @throws \Exception
      */
-    public function setHoyolabPostEntity($postData, $statsData, $user) {
+    public function setHoyolabPostEntity($postData, $statsData, $user)
+    {
         $hoyolabPost = new HoyolabPost();
         $hoyolabPostStats = new HoyolabPostStats();
 
@@ -150,7 +152,7 @@ class HoyolabPostsWebhookController extends AbstractController
         // Hoyolab Post
         $hoyolabPost->setUser($user);
         $hoyolabPost->setCreationDate(new \DateTime());
-        $hoyolabPost->setPostCreationDate((new \DateTime())->setTimestamp((int) $postData['created_at']));
+        $hoyolabPost->setPostCreationDate((new \DateTime())->setTimestamp((int)$postData['created_at']));
         if ($postData['reply_time'])
             $hoyolabPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
         $hoyolabPost->setPostId($postData['post_id']);
