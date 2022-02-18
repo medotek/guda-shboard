@@ -34,10 +34,19 @@ import {mapActions} from "vuex";
 
 export default {
   name: "Hoyolab",
+  mounted() {
+    this.getHoyoStatsData.then
+  },
   methods: {
     ...mapActions({
-      setHoyolabPost: 'discord/setHoyolabPost'
+      setHoyolabPost: 'discord/setHoyolabPost',
+      getHoyoStats: 'discord/getHoyoStats'
     }),
+    async getHoyoStatsData() {
+      await this.getHoyoStats().then((r) => {
+        console.log(r)
+      });
+    },
     submitAddHoyoPost(e) {
       this.postAddedSuccessfully = false
       this.errors = []

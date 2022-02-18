@@ -7,6 +7,7 @@ use App\Entity\HoyolabPostStats;
 use App\Entity\User;
 use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostStatsRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,8 +45,40 @@ class HoyolabPostsWebhookController extends AbstractController
     }
 
     /**
+     * Get all stats from the user's hoyo posts
+     * @Route("/hoyolab/posts/stats",name="hoyolab_posts_stats")
+     */
+    public function getStats(): Response
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        $stats = [
+            'view' => 0,
+            'bookmark' => 0,
+            'like' => 0,
+            'share' => 0,
+            'reply' => 0,
+        ];
+        if ($user) {
+            $arrayHoyolabPosts = new ArrayCollection($user->getHoyolabPosts()->toArray());
+            foreach($arrayHoyolabPosts->toArray() as $hoyolabPost) {
+                /** @var HoyolabPost $hoyolabPost */
+                $hoyoPostStat = $hoyolabPost->getHoyolabPostStats();
+                $stats['view'] += $hoyoPostStat->getView();
+                $stats['bookmark'] += $hoyoPostStat->getBookmark();
+                $stats['like'] += $hoyoPostStat->getLikes();
+                $stats['share'] += $hoyoPostStat->getShare();
+                $stats['reply'] += $hoyoPostStat->getReply();
+            }
+
+            return $this->json($stats);
+        }
+        return $this->json('You need to be authenticated', 400);
+    }
+
+    /**
      * @Route("/hoyolab/post/new/{id}", name="hoyolab_posts_webhook")
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     public function new(Request $request, int $id): Response
     {
@@ -115,11 +148,11 @@ class HoyolabPostsWebhookController extends AbstractController
                 ]);
 
             } catch (
-            ClientExceptionInterface|
-            RedirectionExceptionInterface|
-            ServerExceptionInterface|
-            DecodingExceptionInterface|
-            TransportExceptionInterface|\Exception $e
+                ClientExceptionInterface|
+                RedirectionExceptionInterface|
+                ServerExceptionInterface|
+                DecodingExceptionInterface|
+                TransportExceptionInterface|\Exception $e
             ) {
             }
 

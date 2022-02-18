@@ -49,6 +49,11 @@ export default {
             return axios.post(`/hoyolab/post/new/${id}${params}`).then((res) => {
                 return res
             })
+        },
+        async getHoyoStats(_) {
+            return axios.get('/hoyolab/posts/stats').then(res => {
+                return res
+            })
         }
     },
 }
