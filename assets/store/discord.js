@@ -55,6 +55,11 @@ export default {
                 return res.data
             })
         },
+        async getHoyoUserPostList(_, uid) {
+            return await axios.get(`/hoyolab/user/${uid}/posts`).then(res => {
+                return res.data
+            })
+        },
         async getHoyoUser() {
             return await axios.get().then(res => {
                 return res.data

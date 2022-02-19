@@ -12,6 +12,7 @@ use App\Repository\HoyolabPostUserRepository;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,6 +75,38 @@ class HoyolabPostsWebhookController extends AbstractController
         }
 
         return $this->json('error', 400);
+    }
+
+    /**
+     * Get all stats from the user's hoyo posts
+     * @Route("/hoyolab/user/{uid}/posts",name="hoyolab_user_posts")
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPostsListByHoyoUid(int $uid): Response
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        if ($user) {
+            $dql = "SELECT hp
+                    FROM App:HoyolabPost hp
+                    INNER JOIN App:HoyolabPostUser hpu WITH hp.hoyolabPostUser = hpu.id
+                    INNER JOIN App:User u WITH hpu.user = :user
+                    WHERE hpu.uid = :uid
+                    ";
+
+            $query = $this->entityManager->createQuery($dql)
+                ->setParameter(':uid', $uid)
+                ->setParameter(':user', $user->getId())
+                ->setFirstResult(0)
+                ->setMaxResults(20);
+
+            $paginator = new Paginator($query, $fetchJoinCollection = true);
+
+            $data = $this->serializer->normalize($paginator, null, ['groups' => ['hoyolab_post_user']]);
+
+            return $this->json($data);
+        }
+        return $this->json('You need to be authenticated', 400);
     }
 
     /**
@@ -155,6 +188,7 @@ class HoyolabPostsWebhookController extends AbstractController
                     $postData = $post['data']['post']['post'];
                     $statsData = $post['data']['post']['stat'];
                     $userData = $post['data']['post']['user'];
+                    $imageData = $post['data']['post']['image_list'];
                     $existsHoyolabPosts = $this->hoyolabPostRepository->findOneBy(['postId' => $id]);
 
                     if ($existsHoyolabPosts) {
@@ -162,7 +196,7 @@ class HoyolabPostsWebhookController extends AbstractController
                             'error' => 'L\'Article existe déjà dans notre base de données'
                         ], 400);
                     }
-                    $this->setHoyolabPostEntity($postData, $statsData, $user, $userData);
+                    $this->setHoyolabPostEntity($postData, $statsData, $user, $userData, $imageData);
                 } else if ($listParams && array_key_exists('list', $post['data'])) {
                     // Loop
                     if (!empty($list = $post['data']['list'])) {
@@ -170,8 +204,9 @@ class HoyolabPostsWebhookController extends AbstractController
                             $postData = $post['post'];
                             $statsData = $post['stat'];
                             $userData = $post['user'];
+                            $imageData = $post['image_list'];
                             if ((int)$postData['post_id'] && !$this->hoyolabPostRepository->findOneBy(['postId' => $postData['post_id']])) {
-                                $this->setHoyolabPostEntity($postData, $statsData, $user, $userData);
+                                $this->setHoyolabPostEntity($postData, $statsData, $user, $userData, $imageData);
                                 $i++;
                             }
                         }
@@ -212,7 +247,7 @@ class HoyolabPostsWebhookController extends AbstractController
      * @return void
      * @throws \Exception
      */
-    public function setHoyolabPostEntity($postData, $statsData, $user, $hoyoUser)
+    public function setHoyolabPostEntity($postData, $statsData, $user, $hoyoUser, $image)
     {
         $hoyolabPost = new HoyolabPost();
         $hoyolabPostStats = new HoyolabPostStats();
@@ -227,6 +262,7 @@ class HoyolabPostsWebhookController extends AbstractController
         if (!$existHoyolabPostUser) {
             $hoyolabPostUser->setUid($hoyoUser['uid']);
             $hoyolabPostUser->setNickname($hoyoUser['nickname']);
+            $hoyolabPostUser->setPendant($hoyoUser['pendant']);
             $hoyolabPostUser->setAvatarUrl($hoyoUser['avatar_url']);
             $hoyolabPostUser->setUser($user);
             $hoyolabPost->setHoyolabPostUser($hoyolabPostUser);
@@ -247,6 +283,8 @@ class HoyolabPostsWebhookController extends AbstractController
         $hoyolabPost->setPostCreationDate((new \DateTime())->setTimestamp((int)$postData['created_at']));
         if ($postData['reply_time'])
             $hoyolabPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
+        if (!empty($image))
+            $hoyolabPost->setImage($image[0]['url']);
         $hoyolabPost->setPostId($postData['post_id']);
         $hoyolabPost->setSubject($postData['subject']);
         $hoyolabPost->setHoyolabPostStats($hoyolabPostStats);

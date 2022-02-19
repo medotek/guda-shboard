@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\HoyolabPostStatsRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=HoyolabPostStatsRepository::class)
@@ -18,26 +19,31 @@ class HoyolabPostStats
     private $id;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="integer")
      */
     private $view;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="integer")
      */
     private $reply;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="integer")
      */
     private $likes;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="integer")
      */
     private $bookmark;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="integer")
      */
     private $share;

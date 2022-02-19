@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\HoyolabPostRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -22,24 +23,24 @@ class HoyolabPost
      * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=15)
      */
-    private $postId;
+    public $postId;
 
     /**
      * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=255)
      */
-    private $subject;
+    public $subject;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $creationDate;
+    public $creationDate;
 
     /**
      * @Groups("hoyolab_post_user")
      * @ORM\Column(type="datetime")
      */
-    private $postCreationDate;
+    public $postCreationDate;
 
     /**
      * @Groups("hoyolab_post_user")
@@ -56,7 +57,7 @@ class HoyolabPost
      * @Groups("hoyolab_post_user")
      * @ORM\OneToOne(targetEntity=HoyolabPostStats::class, mappedBy="hoyolabPost", cascade={"persist", "remove"})
      */
-    private $hoyolabPostStats;
+    public $hoyolabPostStats;
 
     /**
      * @ORM\Column(type="bigint", nullable=true)
@@ -67,7 +68,7 @@ class HoyolabPost
      * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=500, nullable=true)
      */
-    private $image;
+    public $image;
 
     /**
      * @ORM\ManyToOne(targetEntity=HoyolabPostUser::class, inversedBy="hoyolabPosts")

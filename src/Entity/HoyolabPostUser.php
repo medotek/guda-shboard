@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiProperty;
+use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -10,11 +12,21 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
+ * @ApiResource(
+ *     collectionOperations={},
+ *     itemOperations={"get"={
+ *              "security"="object.user == user"
+ *              }
+ *          },
+ *     normalizationContext={"groups"={"hoyolab_post_user"}},
+ *     denormalizationContext={}
+ * )
  * @ORM\Entity(repositoryClass=HoyolabPostUserRepository::class)
  */
 class HoyolabPostUser
 {
     /**
+     * @ApiProperty(identifier=false)
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
@@ -22,6 +34,7 @@ class HoyolabPostUser
     private $id;
 
     /**
+     * @ApiProperty(identifier=true)
      * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=15, unique=true)
      */
@@ -42,12 +55,13 @@ class HoyolabPostUser
     /**
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="hoyolabPostUsers")
      */
-    private $user;
+    public $user;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\OneToMany(targetEntity=HoyolabPost::class, mappedBy="hoyolabPostUser")
      */
-    private $hoyolabPosts;
+    public $hoyolabPosts;
 
     /**
      * @Groups("hoyolab_post_user")

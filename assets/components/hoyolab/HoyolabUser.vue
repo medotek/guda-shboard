@@ -15,19 +15,23 @@ import {mapActions} from "vuex";
 export default {
   name: "HoyolabUserStats",
   beforeMount() {
-    this.hoyoStatsInit()
+    this.hoyoInit()
   },
   methods: {
     ...mapActions({
-      getHoyoStats: 'discord/getHoyoStats'
+      getHoyoStats: 'discord/getHoyoStats',
+      getHoyoPostsList: 'discord/getHoyoUserPostList'
     }),
-    async hoyoStatsInit() {
+    async hoyoInit() {
       this.hoyoStats = await this.getHoyoStats(this.$route.params.uid)
+      this.hoyoPosts = await this.getHoyoPostsList(this.$route.params.uid)
+      console.log(this.hoyoPosts)
     }
   },
   data() {
     return {
-      hoyoStats: {}
+      hoyoStats: {},
+      hoyoPosts: {},
     }
   }
 }
