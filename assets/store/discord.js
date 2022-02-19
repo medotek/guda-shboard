@@ -52,7 +52,7 @@ export default {
         },
         async getHoyoStats(_) {
             return axios.get('/hoyolab/posts/stats').then(res => {
-                return res
+                return res.data
             })
         }
     },

@@ -2,10 +2,18 @@
   <div>
     <h1>Fonctionnalités hoyolab</h1>
 
-    <div class="guda-success" v-if="postAddedSuccessfully">
-      Ajout {{ isList ? 'de ' + responseCount + ' posts' : 'de l\'article' }} avec succès
+
+    <div class="wrapper">
+      <div class="h3">Stats</div>
+      <ul v-if="this.getHoyoStats()" v-for="(value, index) in this.getHoyoStats()">
+        <li>{{ index + ' : ' + value }}</li>
+      </ul>
     </div>
+
     <div class="hoyolab-manage">
+      <div class="guda-success" v-if="postAddedSuccessfully">
+        Ajout {{ isList ? 'de ' + responseCount + ' posts' : 'de l\'article' }} avec succès
+      </div>
       <ul class="guda-errors" v-if="errors.length">
         <li class="guda-error" v-for="error in errors">{{ error }}</li>
       </ul>
@@ -34,19 +42,11 @@ import {mapActions} from "vuex";
 
 export default {
   name: "Hoyolab",
-  mounted() {
-    this.getHoyoStatsData.then
-  },
   methods: {
     ...mapActions({
       setHoyolabPost: 'discord/setHoyolabPost',
       getHoyoStats: 'discord/getHoyoStats'
     }),
-    async getHoyoStatsData() {
-      await this.getHoyoStats().then((r) => {
-        console.log(r)
-      });
-    },
     submitAddHoyoPost(e) {
       this.postAddedSuccessfully = false
       this.errors = []
@@ -97,6 +97,11 @@ export default {
 form {
   padding: 0;
 }
+
+.hoyolab-manage {
+  margin-top: 0.675rem;
+}
+
 .hoyolab-post-choice {
   display: flex;
 
