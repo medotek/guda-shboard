@@ -14,6 +14,7 @@ import WebhookForm from "../components/webhook/WebhookForm";
 import WebhookDetail from "../components/webhook/WebhookDetail";
 import DiscordMessage from "../components/discord/message/DiscordMessage";
 import Hoyolab from "../views/Hoyolab";
+import HoyolabUser from "../components/hoyolab/HoyolabUser";
 
 Vue.use(VueRouter)
 
@@ -158,7 +159,13 @@ const routes = [
             }
             next()
         },
-        children: []
+        children: [
+            {
+                path: '/hoyolab/user/:uid',
+                name: 'hoyolab.user',
+                component: HoyolabUser
+            }
+        ]
     }
 
 ]

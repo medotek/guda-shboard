@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -101,9 +102,11 @@ class User implements UserInterface
     private $discordOwnedWehbooks;
 
     /**
-     * @ORM\OneToMany(targetEntity=HoyolabPost::class, mappedBy="user")
+     * @MaxDepth(2)
+     * @Groups("user")
+     * @ORM\OneToMany(targetEntity=HoyolabPostUser::class, mappedBy="user")
      */
-    private $hoyolabPosts;
+    private $hoyolabPostUsers;
 
     public function __construct()
     {
@@ -114,6 +117,7 @@ class User implements UserInterface
         $this->discordWebhooks = new ArrayCollection();
         $this->discordOwnedWehbooks = new ArrayCollection();
         $this->hoyolabPosts = new ArrayCollection();
+        $this->hoyolabPostUsers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -411,29 +415,29 @@ class User implements UserInterface
     }
 
     /**
-     * @return Collection|HoyolabPost[]
+     * @return Collection|HoyolabPostUser[]
      */
-    public function getHoyolabPosts(): Collection
+    public function getHoyolabPostUsers(): Collection
     {
-        return $this->hoyolabPosts;
+        return $this->hoyolabPostUsers;
     }
 
-    public function addHoyolabPost(HoyolabPost $hoyolabPost): self
+    public function addHoyolabPostUser(HoyolabPostUser $hoyolabPostUser): self
     {
-        if (!$this->hoyolabPosts->contains($hoyolabPost)) {
-            $this->hoyolabPosts[] = $hoyolabPost;
-            $hoyolabPost->setUser($this);
+        if (!$this->hoyolabPostUsers->contains($hoyolabPostUser)) {
+            $this->hoyolabPostUsers[] = $hoyolabPostUser;
+            $hoyolabPostUser->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeHoyolabPost(HoyolabPost $hoyolabPost): self
+    public function removeHoyolabPostUser(HoyolabPostUser $hoyolabPostUser): self
     {
-        if ($this->hoyolabPosts->removeElement($hoyolabPost)) {
+        if ($this->hoyolabPostUsers->removeElement($hoyolabPostUser)) {
             // set the owning side to null (unless already changed)
-            if ($hoyolabPost->getUser() === $this) {
-                $hoyolabPost->setUser(null);
+            if ($hoyolabPostUser->getUser() === $this) {
+                $hoyolabPostUser->setUser(null);
             }
         }
 

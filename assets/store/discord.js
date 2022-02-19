@@ -50,10 +50,21 @@ export default {
                 return res
             })
         },
-        async getHoyoStats(_) {
-            return axios.get('/hoyolab/posts/stats').then(res => {
+        async getHoyoStats(_, uid) {
+            return await axios.get(`/hoyolab/user/${uid}/stats`).then(res => {
+                return res.data
+            })
+        },
+        async getHoyoUser() {
+            return await axios.get().then(res => {
+                return res.data
+            })
+        },
+        async getHoyoUsers() {
+            return await axios.get('/hoyolab/users').then(res => {
                 return res.data
             })
         }
+
     },
 }

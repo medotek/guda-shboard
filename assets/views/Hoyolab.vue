@@ -1,13 +1,12 @@
 <template>
   <div>
-    <h1>Fonctionnalités hoyolab</h1>
-
-
-    <div class="wrapper">
-      <div class="h3">Stats</div>
-      <ul v-if="this.getHoyoStats()" v-for="(value, index) in this.getHoyoStats()">
-        <li>{{ index + ' : ' + value }}</li>
-      </ul>
+    <div class="guda-header">
+      <div class="guda-header-title">
+        <button onclick="window.history.back()">
+          <font-awesome-icon icon="fa-solid fa-arrow-left"/>
+        </button>
+        <h1>{{ pageName() }}</h1>
+      </div>
     </div>
 
     <div class="hoyolab-manage">
@@ -34,6 +33,24 @@
         <button class="button button-secondary" type="submit" v-if="isPost || isList">Ajouter</button>
       </form>
     </div>
+
+    <div class="wrapper" v-if="$route.name === 'hoyolab'">
+      <h3>Liste des profils hoyolab</h3>
+      <b-row class="profile-wrapper" v-if="hoyoUsers" v-for="hoyoUser in hoyoUsers">
+        <b-col sm="12" md="4" class="profile-col" @click="goToProfile(hoyoUser.uid)">
+          <div class="profile-card">
+            <div class="profile-image">
+              <img class="avatar" :src="hoyoUser.avatarUrl" :alt="hoyoUser.nickname">
+              <img class="pendant" :src="hoyoUser.pendant" :alt="hoyoUser.nickname">
+            </div>
+            <span>UID : {{ hoyoUser.uid }}</span>
+            <span>{{ hoyoUser.nickname }}</span>
+          </div>
+        </b-col>
+      </b-row>
+    </div>
+
+    <router-view></router-view>
   </div>
 </template>
 
@@ -42,11 +59,21 @@ import {mapActions} from "vuex";
 
 export default {
   name: "Hoyolab",
+  created() {
+    this.hoyoUsersInit()
+  },
   methods: {
     ...mapActions({
       setHoyolabPost: 'discord/setHoyolabPost',
-      getHoyoStats: 'discord/getHoyoStats'
+      getHoyoUsers: 'discord/getHoyoUsers'
     }),
+    goToProfile(uid) {
+      this.$router.push(`/hoyolab/user/${uid}`)
+      console.log(uid)
+    },
+    async hoyoUsersInit() {
+      this.hoyoUsers = await this.getHoyoUsers()
+    },
     submitAddHoyoPost(e) {
       this.postAddedSuccessfully = false
       this.errors = []
@@ -74,6 +101,14 @@ export default {
         this.isPost = false
         this.isList = false
       }
+    },
+    pageName() {
+      switch (this.$route.name) {
+        case ('hoyolab'):
+          return 'Fonctionnalités hoyolab'
+        case ('hoyolab.user'):
+          return 'Hoyolab - Profile'
+      }
     }
   },
   data() {
@@ -88,18 +123,71 @@ export default {
       isList: false,
       addPostMessage: "Ajouter des articles hoyolab",
       clickedAddPostMessage: "Annuler",
+      hoyoUsers: {}
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
+
+.profile-wrapper {
+  .profile-col {
+    padding: 1rem;
+
+    .profile-card {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--guda-light-blue);
+      border-radius: 0.675rem;
+
+      &:hover {
+        background-color: var(--guda-dark-blue);
+        cursor: pointer;
+      }
+
+      span {
+        text-align: center;
+        color: black;
+        font-weight: bold;
+      }
+
+      .profile-image {
+        position: relative;
+        transform: translateX(-50%);
+        left: 50%;
+        width: 250px;
+        height: 250px;
+
+        img {
+          position: absolute;
+        }
+
+        .avatar {
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+        }
+
+        .pendant {
+          width: 250px;
+          height: 250px;
+        }
+      }
+    }
+  }
+}
+
 form {
   padding: 0;
 }
 
+.wrapper {
+  //min-height: inherit;
+}
+
 .hoyolab-manage {
-  margin-top: 0.675rem;
+  margin: 0.675rem 0;
 }
 
 .hoyolab-post-choice {

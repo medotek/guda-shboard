@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\HoyolabPostRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=HoyolabPostRepository::class)
@@ -18,19 +19,16 @@ class HoyolabPost
     private $id;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=15)
      */
     private $postId;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="string", length=255)
      */
     private $subject;
-
-    /**
-     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="hoyolabPosts")
-     */
-    private $user;
 
     /**
      * @ORM\Column(type="datetime")
@@ -38,11 +36,13 @@ class HoyolabPost
     private $creationDate;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="datetime")
      */
     private $postCreationDate;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="datetime", nullable=true)
      */
     private $lastReplyTime;
@@ -53,6 +53,7 @@ class HoyolabPost
     private $discordMessage;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\OneToOne(targetEntity=HoyolabPostStats::class, mappedBy="hoyolabPost", cascade={"persist", "remove"})
      */
     private $hoyolabPostStats;
@@ -61,6 +62,18 @@ class HoyolabPost
      * @ORM\Column(type="bigint", nullable=true)
      */
     private $webhookId;
+
+    /**
+     * @Groups("hoyolab_post_user")
+     * @ORM\Column(type="string", length=500, nullable=true)
+     */
+    private $image;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=HoyolabPostUser::class, inversedBy="hoyolabPosts")
+     */
+    private $hoyolabPostUser;
+
 
     public function getId(): ?int
     {
@@ -87,18 +100,6 @@ class HoyolabPost
     public function setSubject(string $subject): self
     {
         $this->subject = $subject;
-
-        return $this;
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(?User $user): self
-    {
-        $this->user = $user;
 
         return $this;
     }
@@ -181,6 +182,30 @@ class HoyolabPost
     public function setWebhookId(?string $webhookId): self
     {
         $this->webhookId = $webhookId;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    public function getHoyolabPostUser(): ?HoyolabPostUser
+    {
+        return $this->hoyolabPostUser;
+    }
+
+    public function setHoyolabPostUser(?HoyolabPostUser $hoyolabPostUser): self
+    {
+        $this->hoyolabPostUser = $hoyolabPostUser;
 
         return $this;
     }

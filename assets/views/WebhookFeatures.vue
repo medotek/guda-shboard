@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="guda-success" v-if="this.$route.params.webhookStatus === 'created'">Nouveau webhook ajouté</div>
-    <div class="webhook-header">
-      <div class="webhook-header-title">
+    <div class="guda-header">
+      <div class="guda-header-title">
         <button onclick="window.history.back()">
           <font-awesome-icon icon="fa-solid fa-arrow-left"/>
         </button>
@@ -95,31 +95,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.webhook-header {
-  justify-content: space-between;
-  display: flex;
-
-  a, button {
-    margin-left: 0.675rem;
-    background-color: var(--guda-color);
-    color: var(--text-primary-color);
-    text-decoration: none;
-    padding: 5px;
-    border: none;
-    border-radius: 0.475rem;
-    font-weight: bold;
-  }
-
-  .webhook-header-title {
-    display: flex;
-
-    button {
-      margin: 3rem 1rem 3rem 0;
-      min-width: 40px;
-    }
-  }
-}
-
 .webhook-wrapper {
   background-color: var(--background-color-primary);
   padding: 0.875rem;
