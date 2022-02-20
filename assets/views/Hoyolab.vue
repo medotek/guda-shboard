@@ -69,7 +69,6 @@ export default {
     }),
     goToProfile(uid) {
       this.$router.push(`/hoyolab/user/${uid}`)
-      console.log(uid)
     },
     async hoyoUsersInit() {
       this.hoyoUsers = await this.getHoyoUsers()
@@ -134,47 +133,6 @@ export default {
 .profile-wrapper {
   .profile-col {
     padding: 1rem;
-
-    .profile-card {
-      display: flex;
-      flex-direction: column;
-      background-color: var(--guda-light-blue);
-      border-radius: 0.675rem;
-
-      &:hover {
-        background-color: var(--guda-dark-blue);
-        cursor: pointer;
-      }
-
-      span {
-        text-align: center;
-        color: black;
-        font-weight: bold;
-      }
-
-      .profile-image {
-        position: relative;
-        transform: translateX(-50%);
-        left: 50%;
-        width: 250px;
-        height: 250px;
-
-        img {
-          position: absolute;
-        }
-
-        .avatar {
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-        }
-
-        .pendant {
-          width: 250px;
-          height: 250px;
-        }
-      }
-    }
   }
 }
 

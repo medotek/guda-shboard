@@ -68,25 +68,53 @@ class HoyolabPostsWebhookController extends AbstractController
     {
         /** @var User $user */
         $user = $this->security->getUser();
-        $data = $this->serializer->normalize($user, null, ['groups' => ['user', 'hoyolab_post_user']]);
+
 
         if ($user) {
+            $data = $this->serializer->normalize($user, null, ['groups' => ['user', 'hoyolab_post_user']]);
             return $this->json($data['hoyolabPostUsers']);
         }
 
         return $this->json('error', 400);
     }
 
+
+    /**
+     * Get all hoyo users for a guda user
+     * @Route("/hoyolab/user/{uid}",name="hoyolab_posts_user")
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getHoyolabUser(int $uid): Response
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        if ($user) {
+            $hoyoUser = $this->hoyolabPostUserRepository->findOneBy(['user' => $user, 'uid' => $uid]);
+            $data = $this->serializer->normalize($hoyoUser, null, ['groups' => ['user', 'hoyolab_post_user', 'hoyolab_post_user_detail']]);
+
+            return $this->json($data);
+        }
+
+        return $this->json('error', 400);
+    }
+
+
     /**
      * Get all stats from the user's hoyo posts
      * @Route("/hoyolab/user/{uid}/posts",name="hoyolab_user_posts")
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function getPostsListByHoyoUid(int $uid): Response
+    public function getPostsListByHoyoUid(Request $request, int $uid): Response
     {
+        $page = (int) $request->query->get('page', 1);
+
         /** @var User $user */
         $user = $this->security->getUser();
         if ($user) {
+            //set page size
+            $pageSize = '20';
+
             $dql = "SELECT hp
                     FROM App:HoyolabPost hp
                     INNER JOIN App:HoyolabPostUser hpu WITH hp.hoyolabPostUser = hpu.id
@@ -96,11 +124,20 @@ class HoyolabPostsWebhookController extends AbstractController
 
             $query = $this->entityManager->createQuery($dql)
                 ->setParameter(':uid', $uid)
-                ->setParameter(':user', $user->getId())
-                ->setFirstResult(0)
-                ->setMaxResults(20);
+                ->setParameter(':user', $user->getId());
 
-            $paginator = new Paginator($query, $fetchJoinCollection = true);
+            $paginator = new Paginator($query, true);
+
+            // you can get total items
+            $totalItems = count($paginator);
+
+            // get total pages
+            $pagesCount = ceil($totalItems / $pageSize);
+
+            $paginator
+                ->getQuery()
+                ->setFirstResult($pageSize * ($page-1)) // set the offset
+                ->setMaxResults($pageSize);;
 
             $data = $this->serializer->normalize($paginator, null, ['groups' => ['hoyolab_post_user']]);
 
@@ -296,4 +333,95 @@ class HoyolabPostsWebhookController extends AbstractController
         }
         $this->entityManager->flush();
     }
+
+    /**
+     * decrypt encrypted string :)
+     * @param $string
+     * @return false|string
+     */
+    private function decrypt($string, $key)
+    {
+        $ciphering = "AES-128-CTR";
+        $options = 0;
+        $encryption_iv = '1234567891011121';
+        $encryption_key = "GudaIsStrong" . $key;
+        return openssl_decrypt($string, $ciphering,
+            $encryption_key, $options, $encryption_iv);
+    }
+
+    /**
+     * encrypt string
+     * @param $string
+     * @return false|string
+     */
+    private function encrypt($string, $key)
+    {
+        $ciphering = "AES-128-CTR";
+        $options = 0;
+        $encryption_iv = '1234567891011121';
+        $encryption_key = "GudaIsStrong" . $key;
+        return openssl_encrypt($string, $ciphering,
+            $encryption_key, $options, $encryption_iv);
+
+    }
+
+
+    /**
+     * Add or modify hoyolab webhook cronjob
+     * @Route("/hoyolab/user/{uid}/webhookcronjob", name="hoyolab_user_cronjob")
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function cronWebhookUrl(Request $request, int $uid): Response
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        $jsonData = json_decode($request->getContent());
+
+        if (!$user || !$jsonData->webhookUrl) {
+            return $this->json('error', 400);
+        }
+
+        /** @var HoyolabPostUser $hoyoUser */
+        $hoyoUser = $this->hoyolabPostUserRepository->findOneBy(['user' => $user, 'uid' => $uid]);
+
+        $discordRequest = "";
+        if (!$hoyoUser->getWebhookUrl()) {
+            $discordRequest = $this->client->request('GET', $jsonData->webhookUrl);
+
+            $statusCode = $discordRequest->getStatusCode();
+
+            if ($statusCode !== 200) {
+                return $this->json('This is not a discord webhook', 400);
+            }
+        }
+
+        $decryptedExistingUrl = $this->decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
+
+        if ($decryptedExistingUrl === $jsonData->webhookUrl) {
+            return $this->json('Same webhook url', 400);
+        }
+
+        try {
+            $content = $discordRequest->toArray();
+
+            if (array_key_exists('guild_id', $content) &&
+                array_key_exists('token', $content) &&
+                array_key_exists('channel_id', $content) &&
+                array_key_exists('avatar', $content) &&
+                array_key_exists('id', $content) &&
+                array_key_exists('name', $content)
+            ) {
+                $hoyoUser->setWebhookUrl($this->encrypt($jsonData->webhookUrl, $user->getCreationDate()->getTimestamp()));
+                $this->entityManager->persist($hoyoUser);
+                $this->entityManager->flush();
+            }
+
+            return $this->json('Webhook added successfully for the hoyo user');
+        } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
+        }
+
+        return $this->json("Couldn't modify or add the webhook in the database", 400);
+    }
+
+
 }

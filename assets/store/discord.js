@@ -55,13 +55,13 @@ export default {
                 return res.data
             })
         },
-        async getHoyoUserPostList(_, uid) {
-            return await axios.get(`/hoyolab/user/${uid}/posts`).then(res => {
+        async getHoyoUserPostList(_, data) {
+            return await axios.get(`/hoyolab/user/${data.uid}/posts?page=${data.page}`).then(res => {
                 return res.data
             })
         },
-        async getHoyoUser() {
-            return await axios.get().then(res => {
+        async getHoyoUser(_, uid) {
+            return await axios.get(`/hoyolab/user/${uid}`).then(res => {
                 return res.data
             })
         },
@@ -69,7 +69,14 @@ export default {
             return await axios.get('/hoyolab/users').then(res => {
                 return res.data
             })
-        }
-
+        },
+        async setHoyolabWebhook(_, form) {
+            return axios.post(`/hoyolab/user/${form.uid}/webhookcronjob`, form).then((res) => {
+                return res
+            }).catch((e) => {
+                console.log(e)
+                return e
+            })
+        },
     },
 }

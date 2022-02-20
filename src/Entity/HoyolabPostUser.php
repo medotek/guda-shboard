@@ -58,7 +58,6 @@ class HoyolabPostUser
     public $user;
 
     /**
-     * @Groups("hoyolab_post_user")
      * @ORM\OneToMany(targetEntity=HoyolabPost::class, mappedBy="hoyolabPostUser")
      */
     public $hoyolabPosts;
@@ -68,6 +67,12 @@ class HoyolabPostUser
      * @ORM\Column(type="string", length=500, nullable=true)
      */
     private $pendant;
+
+    /**
+     * @Groups("hoyolab_post_user_detail")
+     * @ORM\Column(type="string", length=500, nullable=true)
+     */
+    private $webhookUrl;
 
     public function __construct()
     {
@@ -165,6 +170,18 @@ class HoyolabPostUser
     public function setPendant(?string $pendant): self
     {
         $this->pendant = $pendant;
+
+        return $this;
+    }
+
+    public function getWebhookUrl(): ?string
+    {
+        return $this->webhookUrl;
+    }
+
+    public function setWebhookUrl(?string $webhookUrl): self
+    {
+        $this->webhookUrl = $webhookUrl;
 
         return $this;
     }
