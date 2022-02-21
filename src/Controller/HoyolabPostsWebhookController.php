@@ -284,6 +284,7 @@ class HoyolabPostsWebhookController extends AbstractController
      * @param $statsData
      * @param $user
      * @param $hoyoUser
+     * @param $image
      * @return void
      * @throws \Exception
      */
