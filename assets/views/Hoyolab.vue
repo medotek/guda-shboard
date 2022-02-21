@@ -29,7 +29,9 @@
                @click="isList = true">{{ isListMessage }}
           </div>
         </div>
-        <input type="url" name="url" class="" v-if="isPost || isList">
+        <input type="url" name="url" class="guda-input" v-if="isPost || isList"
+          :placeholder="isPost ? 'https://hoyolab.com/article/7474747' : 'https://hoyolab.com/accountCenter/postList?uid=010101'"
+        >
         <button class="button button-secondary" type="submit" v-if="isPost || isList">Ajouter</button>
       </form>
     </div>

@@ -38,6 +38,7 @@ class HoyolabPostsWebhookController extends AbstractController
     private EntityManagerInterface $entityManager;
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
     private UserRepository $userRepository;
+    private EncryptionManagerController $encryptionManager;
     private SerializerInterface $serializer;
 
     public function __construct(
@@ -47,7 +48,8 @@ class HoyolabPostsWebhookController extends AbstractController
         EntityManagerInterface $entityManager,
         HoyolabPostUserRepository $hoyolabPostUserRepository,
         UserRepository         $userRepository,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        EncryptionManagerController $encryptionManager
     )
     {
         $this->client = $client;
@@ -57,6 +59,7 @@ class HoyolabPostsWebhookController extends AbstractController
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
+        $this->encryptionManager = $encryptionManager;
     }
 
     /**
@@ -335,38 +338,6 @@ class HoyolabPostsWebhookController extends AbstractController
     }
 
     /**
-     * decrypt encrypted string :)
-     * @param $string
-     * @return false|string
-     */
-    private function decrypt($string, $key)
-    {
-        $ciphering = "AES-128-CTR";
-        $options = 0;
-        $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong" . $key;
-        return openssl_decrypt($string, $ciphering,
-            $encryption_key, $options, $encryption_iv);
-    }
-
-    /**
-     * encrypt string
-     * @param $string
-     * @return false|string
-     */
-    private function encrypt($string, $key)
-    {
-        $ciphering = "AES-128-CTR";
-        $options = 0;
-        $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong" . $key;
-        return openssl_encrypt($string, $ciphering,
-            $encryption_key, $options, $encryption_iv);
-
-    }
-
-
-    /**
      * Add or modify hoyolab webhook cronjob
      * @Route("/hoyolab/user/{uid}/webhookcronjob", name="hoyolab_user_cronjob")
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
@@ -395,7 +366,7 @@ class HoyolabPostsWebhookController extends AbstractController
             }
         }
 
-        $decryptedExistingUrl = $this->decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
+        $decryptedExistingUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
 
         if ($decryptedExistingUrl === $jsonData->webhookUrl) {
             return $this->json('Same webhook url', 400);
@@ -411,7 +382,7 @@ class HoyolabPostsWebhookController extends AbstractController
                 array_key_exists('id', $content) &&
                 array_key_exists('name', $content)
             ) {
-                $hoyoUser->setWebhookUrl($this->encrypt($jsonData->webhookUrl, $user->getCreationDate()->getTimestamp()));
+                $hoyoUser->setWebhookUrl($this->encryptionManager->encrypt($jsonData->webhookUrl, $user->getCreationDate()->getTimestamp()));
                 $this->entityManager->persist($hoyoUser);
                 $this->entityManager->flush();
             }
@@ -422,6 +393,4 @@ class HoyolabPostsWebhookController extends AbstractController
 
         return $this->json("Couldn't modify or add the webhook in the database", 400);
     }
-
-
 }

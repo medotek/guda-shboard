@@ -26,7 +26,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class HoyolabPostUser
 {
     /**
-     * @ApiProperty(identifier=false)
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")

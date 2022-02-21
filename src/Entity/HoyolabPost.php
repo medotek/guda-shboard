@@ -75,6 +75,11 @@ class HoyolabPost
      */
     private $hoyolabPostUser;
 
+    /**
+     * @ORM\OneToOne(targetEntity=HoyolabPostDiscordNotification::class, mappedBy="hoyolabPost", cascade={"persist", "remove"})
+     */
+    private $hoyolabPostDiscordNotification;
+
 
     public function getId(): ?int
     {
@@ -207,6 +212,28 @@ class HoyolabPost
     public function setHoyolabPostUser(?HoyolabPostUser $hoyolabPostUser): self
     {
         $this->hoyolabPostUser = $hoyolabPostUser;
+
+        return $this;
+    }
+
+    public function getHoyolabPostDiscordNotification(): ?HoyolabPostDiscordNotification
+    {
+        return $this->hoyolabPostDiscordNotification;
+    }
+
+    public function setHoyolabPostDiscordNotification(?HoyolabPostDiscordNotification $hoyolabPostDiscordNotification): self
+    {
+        // unset the owning side of the relation if necessary
+        if ($hoyolabPostDiscordNotification === null && $this->hoyolabPostDiscordNotification !== null) {
+            $this->hoyolabPostDiscordNotification->setHoyolabPost(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($hoyolabPostDiscordNotification !== null && $hoyolabPostDiscordNotification->getHoyolabPost() !== $this) {
+            $hoyolabPostDiscordNotification->setHoyolabPost($this);
+        }
+
+        $this->hoyolabPostDiscordNotification = $hoyolabPostDiscordNotification;
 
         return $this;
     }

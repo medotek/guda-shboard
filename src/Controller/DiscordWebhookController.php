@@ -33,6 +33,7 @@ class DiscordWebhookController extends AbstractController
     private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
     private Security $security;
+    private EncryptionManagerController $encryptionManager;
 
     public function __construct(
         HttpClientInterface      $client,
@@ -40,7 +41,8 @@ class DiscordWebhookController extends AbstractController
         UserRepository           $userRepository,
         SerializerInterface      $serializer,
         EntityManagerInterface   $entityManager,
-        Security                 $security
+        Security                 $security,
+        EncryptionManagerController $encryptionManager
     )
     {
         $this->client = $client;
@@ -49,37 +51,7 @@ class DiscordWebhookController extends AbstractController
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->security = $security;
-    }
-
-    /**
-     * encrypt string
-     * @param $string
-     * @return false|string
-     */
-    private function encrypt($string, $key)
-    {
-        $ciphering = "AES-128-CTR";
-        $options = 0;
-        $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong" . $key;
-        return openssl_encrypt($string, $ciphering,
-            $encryption_key, $options, $encryption_iv);
-
-    }
-
-    /**
-     * decrypt encrypted string :)
-     * @param $string
-     * @return false|string
-     */
-    private function decrypt($string, $key)
-    {
-        $ciphering = "AES-128-CTR";
-        $options = 0;
-        $encryption_iv = '1234567891011121';
-        $encryption_key = "GudaIsStrong" . $key;
-        return openssl_decrypt($string, $ciphering,
-            $encryption_key, $options, $encryption_iv);
+        $this->encryptionManager = $encryptionManager;
     }
 
     /**
@@ -112,7 +84,7 @@ class DiscordWebhookController extends AbstractController
                     $discordWebhook->setAvatarId($content['avatar']);
                     $discordWebhook->setChannelId($content['channel_id']);
                     $discordWebhook->setGuildId($content['guild_id']);
-                    $discordWebhook->setToken($this->encrypt($content['token'], $existingUser->getCreationDate()->getTimestamp()));
+                    $discordWebhook->setToken($this->encryptionManager->encrypt($content['token'], $existingUser->getCreationDate()->getTimestamp()));
                     $discordWebhook->setOwner($existingUser);
                     // Persist discordWebhook
                     $this->entityManager->persist($discordWebhook);
@@ -171,9 +143,6 @@ class DiscordWebhookController extends AbstractController
         $webhook = $this->discordWebhookRepository->findOneBy(["owner" => $user, 'id' => $id]);
 
         if (!empty($webhook) && $user) {
-            // Decrypt token
-//            $webhook->setToken($this->decrypt($webhook->getToken(), $user->getCreationDate()->getTimestamp()));
-
             return $this->json($this->serializer->serialize($webhook, 'json'));
         }
 
