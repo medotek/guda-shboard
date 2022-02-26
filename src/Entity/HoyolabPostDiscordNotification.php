@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\HoyolabPostDiscordNotificationRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=HoyolabPostDiscordNotificationRepository::class)
@@ -28,24 +29,10 @@ class HoyolabPostDiscordNotification
     private $hoyolabPost;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\Column(type="datetime", nullable=true)
      */
     private $processDate;
-
-    /**
-     * @ORM\OneToOne(targetEntity=HoyolabPostStats::class, cascade={"persist", "remove"})
-     */
-    private $processStats;
-
-    /**
-     * @ORM\Column(type="string", length=15, nullable=true)
-     */
-    private $channelId;
-
-    /**
-     * @ORM\Column(type="string", length=15, nullable=true)
-     */
-    private $guildId;
 
     public function getId(): ?int
     {
@@ -84,42 +71,6 @@ class HoyolabPostDiscordNotification
     public function setProcessDate(?\DateTimeInterface $processDate): self
     {
         $this->processDate = $processDate;
-
-        return $this;
-    }
-
-    public function getProcessStats(): ?HoyolabPostStats
-    {
-        return $this->processStats;
-    }
-
-    public function setProcessStats(?HoyolabPostStats $processStats): self
-    {
-        $this->processStats = $processStats;
-
-        return $this;
-    }
-
-    public function getChannelId(): ?string
-    {
-        return $this->channelId;
-    }
-
-    public function setChannelId(?string $channelId): self
-    {
-        $this->channelId = $channelId;
-
-        return $this;
-    }
-
-    public function getGuildId(): ?string
-    {
-        return $this->guildId;
-    }
-
-    public function setGuildId(?string $guildId): self
-    {
-        $this->guildId = $guildId;
 
         return $this;
     }

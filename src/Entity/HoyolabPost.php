@@ -76,6 +76,7 @@ class HoyolabPost
     private $hoyolabPostUser;
 
     /**
+     * @Groups("hoyolab_post_user")
      * @ORM\OneToOne(targetEntity=HoyolabPostDiscordNotification::class, mappedBy="hoyolabPost", cascade={"persist", "remove"})
      */
     private $hoyolabPostDiscordNotification;

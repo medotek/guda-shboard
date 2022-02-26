@@ -22,7 +22,8 @@
           </ul>
           <div class="hoyolab-user-management guda-border-highlight">
             <div class="h3">Gestion du compte hoyolab</div>
-            <p>Vous allez pouvoir gérer depuis ce dashboard l'envoi de notification (sur les stats) sur un channel discord, et cela
+            <p>Vous allez pouvoir gérer depuis ce dashboard l'envoi de notification (sur les stats) sur un channel
+              discord, et cela
               grace à un webhook</p>
 
             <div v-if="success" class="guda-success">Le webhook a été ajouté ou modifié avec succès</div>
@@ -30,13 +31,20 @@
               <li class="guda-error" v-for="error in errors">{{ error }}</li>
             </ul>
 
-            <div v-if="hoyoUser.webhookUrl" class="existing-webhook guda-success">Un webhook est déjà existant pour ce compte hoyolab</div>
-            <div class="warning">Ce webhook ne comprend pas la modification/suppression des messages depuis la dashboard</div>
-            <button class="button button-primary" v-if="!displayWF" @click="displayWF = !displayWF">{{ form.webhookUrl ? 'Modifier' : 'Ajouter'}} le lien du webhook</button>
+            <div v-if="hoyoUser.webhookUrl" class="existing-webhook guda-success">Un webhook est déjà existant pour ce
+              compte hoyolab
+            </div>
+            <div class="warning">Ce webhook ne comprend pas la modification/suppression des messages depuis la
+              dashboard
+            </div>
+            <button class="button button-primary" v-if="!displayWF" @click="displayWF = !displayWF">
+              {{ form.webhookUrl ? 'Modifier' : 'Ajouter' }} le lien du webhook
+            </button>
             <button class="button button-primary" v-if="displayWF" @click="displayWF = false">Annuler</button>
 
             <form v-if="displayWF" @submit="webhookUrlForm">
-              <input v-model="form.webhookUrl" class="guda-input" type="url" placeholder="https://discordapp.com...." name="webhook-url">
+              <input v-model="form.webhookUrl" class="guda-input" type="url" placeholder="https://discordapp.com...."
+                     name="webhook-url">
               <button class="button button-secondary">Enregistrer</button>
             </form>
           </div>
@@ -67,6 +75,7 @@
           </b-card>
         </b-col>
       </b-row>
+      <div class="loading" v-if="gudaLoading">Loading</div>
     </div>
   </div>
 </template>
@@ -78,6 +87,9 @@ export default {
   name: "HoyolabUserStats",
   beforeMount() {
     this.hoyoInit()
+  },
+  mounted() {
+    this.getNextPosts();
   },
   methods: {
     ...mapActions({
@@ -103,10 +115,40 @@ export default {
         this.webhookUrl = ""
         this.errors.push("Le webhook n'a pas pu être ajouté ou modifié")
       })
+    },
+    getNextPosts() {
+        window.onscroll = () => {
+          if (!this.noMoreData) {
+          let bottomOfWindow = document.documentElement.scrollTop + window.innerHeight === document.documentElement.offsetHeight;
+          if (bottomOfWindow) {
+            if (!this.gudaLoading) {
+              this.gudaLoading = true
+              this.getHoyoPostsList({uid: this.$route.params.uid, page: this.page + 1}).then(response => {
+                this.gudaLoading = false
+                  this.page = this.page + 1
+                  response.forEach(item => {
+                    console.log(item)
+                    this.hoyoPostsInit.push(item);
+                  })
+
+                if (response.length < 20) {
+                  this.noMoreData = true
+                }
+              }).catch(err => {
+                console.log(err)
+                this.gudaLoading = false
+              });
+            }
+          }
+        }
+      }
     }
   },
   data() {
     return {
+      noMoreData: false,
+      gudaLoading: false,
+      page: 1,
       errors: [],
       success: false,
       hoyoStats: {},

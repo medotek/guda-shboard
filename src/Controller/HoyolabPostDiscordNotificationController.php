@@ -137,7 +137,8 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     'news' => $newStats->getReply() - $oldStats['reply_num'],
                     'subject' => $hoyoPost->getSubject(),
                     'stats' => $statistics,
-                    'postCreationDate' => $hoyoPost->getPostCreationDate()
+                    'postCreationDate' => $hoyoPost->getPostCreationDate(),
+                    'hoyoUserImage' => $hoyoUser->getAvatarUrl()
                 ];
 
                 // If the post never has a notification message on discord, then create one!
@@ -145,6 +146,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     $discordNotification = new HoyolabPostDiscordNotification();
                     $discordNotification->setHoyolabPost($hoyoPost);
                     $discordNotification->setProcessDate(new \DateTime());
+                    $this->entityManager->persist($discordNotification);
                 }
 
             }
@@ -249,6 +251,9 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     "inline" => true
                 ]
             ],
+            "thumbnail" => [
+                "url" => $embed['hoyoUserImage']
+            ]
 //            "timestamp" => $embed['postCreationDate']
         ];
     }
