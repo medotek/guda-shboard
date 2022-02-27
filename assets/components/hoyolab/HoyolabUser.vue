@@ -11,6 +11,7 @@
             </div>
             <span>UID : {{ hoyoUser.uid }}</span>
             <span>{{ hoyoUser.nickname }}</span>
+            <b-link class="profile-link" :href="`https://www.hoyolab.com/accountCenter/postList?id=${hoyoUser.uid}`" target="_blank"></b-link>
           </div>
         </b-col>
         <b-col sm="12" md="6" lg="9">
@@ -20,6 +21,10 @@
               {{ index }} <span>{{ value }}</span>
             </li>
           </ul>
+
+          <div class="guda-border-highlight guda-highlight missing-posts" v-if="missingPosts">
+            {{ missingPosts }}
+          </div>
           <div class="hoyolab-user-management guda-border-highlight">
             <div class="h3">Gestion du compte hoyolab</div>
             <p>Vous allez pouvoir gérer depuis ce dashboard l'envoi de notification (sur les stats) sur un channel
@@ -57,19 +62,25 @@
       <b-row>
         <b-col sm="6" md="4" lg="3" v-for="(hoyoPost, index) in hoyoPostsInit" :key="index">
           <b-card
-              :title="hoyoPost.subject"
               :img-src="hoyoPost.image"
               img-top
               tag="article"
               class="guda-post-card"
               lazy="load"
           >
+            <b-card-title>
+              <b-link :href="`https://hoyolab.com/article/${hoyoPost.postId}`" target="_blank">
+                {{ hoyoPost.subject }}
+              </b-link>
+            </b-card-title>
             <b-card-text>
               <div class="card-content">
-                <span class="title">Last Time Reply</span>
-                <span class="guda-highlight">{{ hoyoPost.lastReplyTime | formatDate }}</span>
-                <span class="title">Post Creation Date</span>
-                <span class="guda-highlight">{{ hoyoPost.postCreationDate | formatDate }}</span>
+                <!--                <span class="title">Last Time Reply</span>-->
+                <!--                <span class="guda-highlight">{{ hoyoPost.lastReplyTime | formatDate }}</span>-->
+                <span class="title">Création du post hoyolab</span>
+                <span class="guda-highlight">{{ getCreationDate(hoyoPost) }}</span>
+                <span class="title">Dernière notification</span>
+                <span class="guda-highlight">{{ getNotificationDate(hoyoPost) }}</span>
               </div>
             </b-card-text>
           </b-card>
@@ -102,6 +113,16 @@ export default {
       this.hoyoStats = await this.getHoyoStats(this.$route.params.uid)
       this.hoyoUser = await this.getHoyoUser(this.$route.params.uid)
       this.hoyoPostsInit = await this.getHoyoPostsList({uid: this.$route.params.uid, page: 1})
+      this.fetchNext = true
+      let hoyoUserData = await fetch('https://api.guda.club:3001/https://bbs-api-os.mihoyo.com/community/user/wapi/getUserFullInfo?uid=' + this.$route.params.uid, {method: 'GET'}).then(r => {
+        return r.json()
+      })
+
+      let result = hoyoUserData.data.user_info.achieve.post_num - this.hoyoStats.posts
+      if (result > 0) {
+        this.missingPosts = `Il manque ${result} posts hoyolab sur le site. Regardez les plus vieux en priorité ...`
+      }
+
     },
     async webhookUrlForm(e) {
       this.success = false;
@@ -109,35 +130,47 @@ export default {
       e.preventDefault()
       await this.setHoyolabWebhook(this.form).then(res => {
         this.success = true
-        console.log(res)
       }).catch(err => {
         console.log(err)
         this.webhookUrl = ""
         this.errors.push("Le webhook n'a pas pu être ajouté ou modifié")
       })
     },
+    getNotificationDate(hoyoPost) {
+      if (hoyoPost.hoyolabPostDiscordNotification) {
+        let date = this.$options.filters.formatDate(hoyoPost.hoyolabPostDiscordNotification.processDate)
+        return date.replace(':', 'h')
+      } else {
+        return 'Aucune notification'
+      }
+    },
+    getCreationDate(hoyoPost) {
+      let date = this.$options.filters.formatDate(hoyoPost.postCreationDate)
+      return date.replace(':', 'h')
+    },
     getNextPosts() {
-        window.onscroll = () => {
+      window.onscroll = () => {
+        if (this.fetchNext) {
           if (!this.noMoreData) {
-          let bottomOfWindow = document.documentElement.scrollTop + window.innerHeight === document.documentElement.offsetHeight;
-          if (bottomOfWindow) {
-            if (!this.gudaLoading) {
-              this.gudaLoading = true
-              this.getHoyoPostsList({uid: this.$route.params.uid, page: this.page + 1}).then(response => {
-                this.gudaLoading = false
+            let bottomOfWindow = document.documentElement.scrollTop + window.innerHeight === document.documentElement.offsetHeight;
+            if (bottomOfWindow) {
+              if (!this.gudaLoading) {
+                this.gudaLoading = true
+                this.getHoyoPostsList({uid: this.$route.params.uid, page: this.page + 1}).then(response => {
+                  this.gudaLoading = false
                   this.page = this.page + 1
                   response.forEach(item => {
-                    console.log(item)
                     this.hoyoPostsInit.push(item);
                   })
 
-                if (response.length < 20) {
-                  this.noMoreData = true
-                }
-              }).catch(err => {
-                console.log(err)
-                this.gudaLoading = false
-              });
+                  if (response.length < 20) {
+                    this.noMoreData = true
+                  }
+                }).catch(err => {
+                  console.log(err)
+                  this.gudaLoading = false
+                });
+              }
             }
           }
         }
@@ -146,6 +179,8 @@ export default {
   },
   data() {
     return {
+      missingPosts: null,
+      fetchNext: false,
       noMoreData: false,
       gudaLoading: false,
       page: 1,
@@ -170,10 +205,21 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.profile-card {
+  position: relative;
+  .profile-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+}
+
 .guda-post-card {
   background-color: var(--guda-light-blue);
   margin-bottom: 1rem;
-
   .card-body {
     .card-title {
       font-size: 1rem;
@@ -191,7 +237,10 @@ export default {
   }
 }
 
-.hoyolab-user-management {
+.missing-posts {
+  margin-bottom: 0.675rem;
+}
+.hoyolab-user-management,.missing-posts {
   border-radius: 0.675rem;
   padding: 1rem;
 }

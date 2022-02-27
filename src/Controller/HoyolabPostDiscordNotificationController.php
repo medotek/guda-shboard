@@ -138,7 +138,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     'subject' => $hoyoPost->getSubject(),
                     'stats' => $statistics,
                     'postCreationDate' => $hoyoPost->getPostCreationDate(),
-                    'hoyoUserImage' => $hoyoUser->getAvatarUrl()
+                    'hoyoUserImage' => $hoyoPost->getImage()
                 ];
 
                 // If the post never has a notification message on discord, then create one!
@@ -188,8 +188,6 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $messages[] = $message;
         }
 
-        dump(json_encode($messages));
-
         foreach ($messages as $send) {
             $response = $this->client->request('POST', $webhook . '?wait=true', [
                 'headers' => [
@@ -201,9 +199,8 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
             if ($response->getStatusCode() === 200) {
                 try {
-                    dump($response->toArray());
                     continue;
-                } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
+                } catch (ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
                     // TODO : logger
                     dump($e);
                 }

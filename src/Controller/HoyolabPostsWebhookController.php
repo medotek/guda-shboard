@@ -42,13 +42,13 @@ class HoyolabPostsWebhookController extends AbstractController
     private SerializerInterface $serializer;
 
     public function __construct(
-        HttpClientInterface    $client,
-        HoyolabPostRepository  $hoyolabPostRepository,
-        Security               $security,
-        EntityManagerInterface $entityManager,
-        HoyolabPostUserRepository $hoyolabPostUserRepository,
-        UserRepository         $userRepository,
-        SerializerInterface $serializer,
+        HttpClientInterface         $client,
+        HoyolabPostRepository       $hoyolabPostRepository,
+        Security                    $security,
+        EntityManagerInterface      $entityManager,
+        HoyolabPostUserRepository   $hoyolabPostUserRepository,
+        UserRepository              $userRepository,
+        SerializerInterface         $serializer,
         EncryptionManagerController $encryptionManager
     )
     {
@@ -110,7 +110,7 @@ class HoyolabPostsWebhookController extends AbstractController
      */
     public function getPostsListByHoyoUid(Request $request, int $uid): Response
     {
-        $page = (int) $request->query->get('page', 1);
+        $page = (int)$request->query->get('page', 1);
 
         /** @var User $user */
         $user = $this->security->getUser();
@@ -123,6 +123,7 @@ class HoyolabPostsWebhookController extends AbstractController
                     INNER JOIN App:HoyolabPostUser hpu WITH hp.hoyolabPostUser = hpu.id
                     INNER JOIN App:User u WITH hpu.user = :user
                     WHERE hpu.uid = :uid
+                    ORDER BY hp.postCreationDate DESC
                     ";
 
             $query = $this->entityManager->createQuery($dql)
@@ -139,7 +140,7 @@ class HoyolabPostsWebhookController extends AbstractController
 
             $paginator
                 ->getQuery()
-                ->setFirstResult($pageSize * ($page-1)) // set the offset
+                ->setFirstResult($pageSize * ($page - 1)) // set the offset
                 ->setMaxResults($pageSize);;
 
             $data = $this->serializer->normalize($paginator, null, ['groups' => ['hoyolab_post_user']]);
@@ -158,25 +159,27 @@ class HoyolabPostsWebhookController extends AbstractController
         /** @var User $user */
         $user = $this->security->getUser();
         $stats = [
-            'view' => 0,
-            'bookmark' => 0,
-            'like' => 0,
-            'share' => 0,
-            'reply' => 0,
+            'views' => 0,
+            'bookmarks' => 0,
+            'likes' => 0,
+            'shares' => 0,
+            'replies' => 0,
+            'posts' => 0
         ];
 
         if ($user) {
             /** @var HoyolabPostUser $hoyolabPostUser */
             $hoyolabPostUser = $this->hoyolabPostUserRepository->findOneBy(['user' => $user, 'uid' => $uid]);
             $arrayHoyolabPosts = new ArrayCollection($hoyolabPostUser->getHoyolabPosts()->toArray());
-            foreach($arrayHoyolabPosts->toArray() as $hoyolabPost) {
+            foreach ($arrayHoyolabPosts->toArray() as $key => $hoyolabPost) {
                 /** @var HoyolabPost $hoyolabPost */
                 $hoyoPostStat = $hoyolabPost->getHoyolabPostStats();
-                $stats['view'] += $hoyoPostStat->getView();
-                $stats['bookmark'] += $hoyoPostStat->getBookmark();
-                $stats['like'] += $hoyoPostStat->getLikes();
-                $stats['share'] += $hoyoPostStat->getShare();
-                $stats['reply'] += $hoyoPostStat->getReply();
+                $stats['views'] += $hoyoPostStat->getView();
+                $stats['bookmarks'] += $hoyoPostStat->getBookmark();
+                $stats['likes'] += $hoyoPostStat->getLikes();
+                $stats['shares'] += $hoyoPostStat->getShare();
+                $stats['replies'] += $hoyoPostStat->getReply();
+                $stats['posts'] = $key + 1;
             }
 
             return $this->json($stats);
@@ -261,11 +264,11 @@ class HoyolabPostsWebhookController extends AbstractController
                 ]);
 
             } catch (
-                ClientExceptionInterface|
-                RedirectionExceptionInterface|
-                ServerExceptionInterface|
-                DecodingExceptionInterface|
-                TransportExceptionInterface|\Exception $e
+            ClientExceptionInterface|
+            RedirectionExceptionInterface|
+            ServerExceptionInterface|
+            DecodingExceptionInterface|
+            TransportExceptionInterface|\Exception $e
             ) {
                 return $this->json([
                     $e
@@ -393,5 +396,46 @@ class HoyolabPostsWebhookController extends AbstractController
         }
 
         return $this->json("Couldn't modify or add the webhook in the database", 400);
+    }
+
+
+    /**
+     * Update the posts list of all hoyolab users
+     * @return void
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws \Exception
+     */
+    public function updateHoyolabUserPostsList()
+    {
+        $hoyoUsers = $this->hoyolabPostUserRepository->findAll();
+        $arrayHoyoUsers = new ArrayCollection($hoyoUsers);
+        /** @var HoyolabPostUser $hoyoUser */
+        foreach ($arrayHoyoUsers->toArray() as $hoyoUser) {
+            $hoyolabListPostUrl = 'https://bbs-api-os.mihoyo.com/community/post/wapi/userPost?size=10&uid=' . $hoyoUser->getUid();
+            $response = $this->client->request('GET', $hoyolabListPostUrl);
+
+            if ($response->getStatusCode() === 200) {
+                try {
+                    $postList = $response->toArray()['data']['list'];
+                } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
+                    dump($e);
+                    return;
+                }
+            } else {
+                return;
+            }
+            dump($postList);
+            // Verify unexisting posts
+            foreach ($postList as $post) {
+                $statsData = $post['stat'];
+                $userData = $post['user'];
+                $imageData = $post['image_list'];
+
+                if (!$this->hoyolabPostRepository->findOneBy(['postId' => $post['post']['post_id']])) {
+                    $this->setHoyolabPostEntity($post['post'], $statsData, $hoyoUser->getUser(), $userData, $imageData);
+                }
+            }
+        }
+
     }
 }
