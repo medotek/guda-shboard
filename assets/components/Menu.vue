@@ -7,7 +7,7 @@
     <theme-button/>
     <div id="side-menu-routes">
       <Button title="Accueil" routeName="home"/>
-      <Button title="Inscription" v-if="!isAuthenticated" routeName="register"/>
+<!--      <Button title="Inscription" v-if="!isAuthenticated" routeName="register"/>-->
       <Button title="Connexion" v-if="!isAuthenticated" routeName="login"/>
       <Button title="Dashboard" v-if="isAuthenticated" routeName="dashboard"/>
       <Button title="Mon compte" v-if="isAuthenticated" routeName="account"/>
