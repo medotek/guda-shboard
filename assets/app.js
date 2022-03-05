@@ -26,7 +26,7 @@ Vue.use(BootstrapVue);
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 Vue.config.productionTip = false
-axios.defaults.baseURL = 'http://localhost:8000/api'
+axios.defaults.baseURL = 'https://gazette.guda.club/api'
 
 require('./store/subscriber')
 
