@@ -24,19 +24,19 @@ const routes = [
         name: 'home',
         component: Home
     },
-    {
-        path: '/register',
-        name: 'register',
-        component: Register,
-        beforeEnter: (to, from, next) => {
-            if (store.getters['auth/isAuthenticated']) {
-                return next({
-                    name: 'home'
-                })
-            }
-            next()
-        }
-    },
+    // {
+    //     path: '/register',
+    //     name: 'register',
+    //     component: Register,
+    //     beforeEnter: (to, from, next) => {
+    //         if (store.getters['auth/isAuthenticated']) {
+    //             return next({
+    //                 name: 'home'
+    //             })
+    //         }
+    //         next()
+    //     }
+    // },
     {
         path: '/login',
         name: 'login',
