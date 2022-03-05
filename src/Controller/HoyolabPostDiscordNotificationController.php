@@ -64,9 +64,15 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
             // Hoyo Posts
             $postEmbedData = [];
+            // No posts
+            if (empty($hoyoUser->getHoyolabPosts()->toArray())) {
+                continue;
+            }
+
             $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
             /** @var HoyolabPost $hoyoPost */
             foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
+
                 $newStats = $hoyoPost->getHoyolabPostStats();
                 $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
 
@@ -145,10 +151,9 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 if (!$discordNotification) {
                     $discordNotification = new HoyolabPostDiscordNotification();
                     $discordNotification->setHoyolabPost($hoyoPost);
-                    $discordNotification->setProcessDate(new \DateTime());
-                    $this->entityManager->persist($discordNotification);
                 }
-
+                $discordNotification->setProcessDate(new \DateTime());
+                $this->entityManager->persist($discordNotification);
             }
 
             // Treat discord notification
