@@ -14,6 +14,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -411,6 +412,7 @@ class HoyolabPostsWebhookController extends AbstractController
         $arrayHoyoUsers = new ArrayCollection($hoyoUsers);
         /** @var HoyolabPostUser $hoyoUser */
         foreach ($arrayHoyoUsers->toArray() as $hoyoUser) {
+            // the last 10 posts
             $hoyolabListPostUrl = 'https://bbs-api-os.mihoyo.com/community/post/wapi/userPost?size=10&uid=' . $hoyoUser->getUid();
             $response = $this->client->request('GET', $hoyolabListPostUrl);
 
@@ -418,13 +420,12 @@ class HoyolabPostsWebhookController extends AbstractController
                 try {
                     $postList = $response->toArray()['data']['list'];
                 } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
-                    dump($e);
-                    return;
+                    throw new Exception($e);
                 }
             } else {
                 return;
             }
-            dump($postList);
+
             // Verify unexisting posts
             foreach ($postList as $post) {
                 $statsData = $post['stat'];

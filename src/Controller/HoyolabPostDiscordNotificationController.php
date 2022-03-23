@@ -20,6 +20,7 @@ use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Spatie\Async\Pool;
 
 class HoyolabPostDiscordNotificationController extends AbstractController
 {
@@ -27,6 +28,9 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     private EncryptionManagerController $encryptionManager;
     private HttpClientInterface $client;
     private EntityManagerInterface $entityManager;
+    private int $counter1 = 0;
+    private int $counter2 = 0;
+    private array $arr;
 
     public function __construct(
         HoyolabPostUserRepository   $hoyolabPostUserRepository,
@@ -44,10 +48,16 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     /**
      * @Route("/hoyolab/cron/update/all", name="first_cron")
      * @throws \Exception
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
     public function discordNotificationCron(): void
     {
+        $poolUsers = Pool::create();
+        $poolUsers
+            // Execute 10 per 10
+            ->concurrency(10)
+            // Wait 2s before starting the next 10
+            ->sleepTime(2000);
+
         $allHoyoUsers = $this->hoyolabPostUserRepository->findAll();
         $arrayHoyoUsers = new ArrayCollection($allHoyoUsers);
 
@@ -58,112 +68,165 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 continue;
             }
 
-            // Get user key to decrypt the webhookUrl
-            $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
-            $webhookUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $userKey);
-
-            // Hoyo Posts
-            $postEmbedData = [];
-            // No posts
-            if (empty($hoyoUser->getHoyolabPosts()->toArray())) {
-                continue;
-            }
-
-            $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
-            /** @var HoyolabPost $hoyoPost */
-            foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
-
-                $newStats = $hoyoPost->getHoyolabPostStats();
-                $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
-
-                $post = $this->updateHoyolabPost($hoyoPost->getPostId());
-                $oldStats = [];
-                $statsData = [];
-                // Update the hoyo post here
-                if (array_key_exists('post', $post['data'])) {
-                    $postData = $post['data']['post']['post'];
-                    $statsData = $post['data']['post']['stat'];
-
-                    // Don't update if there is no new replies
-                    if ((int)$statsData['reply_num'] === $newStats->getReply()) {
-                        continue;
-                    }
-
-                    $oldStats = [
-                        'like_num' => $newStats->getLikes(),
-                        'view_num' => $newStats->getView(),
-                        'bookmark_num' => $newStats->getBookmark(),
-                        'share_num' => $newStats->getShare(),
-                        'reply_num' => $newStats->getReply()
-                    ];
-
-                    // Hoyolab Post Stats
-                    $newStats->setLikes($statsData['like_num']);
-                    $newStats->setBookmark($statsData['bookmark_num']);
-                    $newStats->setReply($statsData['reply_num']);
-                    $newStats->setShare($statsData['share_num']);
-                    $newStats->setView($statsData['view_num']);
-
-                    if ($postData['reply_time'])
-                        $hoyoPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
-                    $hoyoPost->setSubject($postData['subject']);
-
-                    $this->entityManager->persist($hoyoPost);
-                    // Only persist the new stats
-                    $this->entityManager->persist($newStats);
-                }
-
-                $diffView = (int)$statsData['view_num'] - $oldStats['view_num'];
-                $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
-
-                $diffBookmark = (int)$statsData['bookmark_num'] - $oldStats['bookmark_num'];
-                $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
-
-                $diffLike = (int)$statsData['like_num'] - $oldStats['like_num'];
-                $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
-
-                $diffShare = (int)$statsData['share_num'] - $oldStats['share_num'];
-                $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
-
-                $diffReply = (int)$statsData['reply_num'] - $oldStats['reply_num'];
-                $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
-
-                // Compare cron stats with updated stats
-                $statistics = [
-                    'view' => $oldStats['view_num'] . $diffView,
-                    'bookmark' => $oldStats['bookmark_num'] . $diffBookmark,
-                    'like' => $oldStats['like_num'] . $diffLike,
-                    'share' => $oldStats['share_num'] . $diffShare,
-                    'reply' => $oldStats['reply_num'] . $diffReply,
-                ];
-
-                // Prepare embed data
-                $postEmbedData[] = [
-                    'postId' => $hoyoPost->getPostId(),
-                    'news' => $newStats->getReply() - $oldStats['reply_num'],
-                    'subject' => $hoyoPost->getSubject(),
-                    'stats' => $statistics,
-                    'postCreationDate' => $hoyoPost->getPostCreationDate(),
-                    'hoyoUserImage' => $hoyoPost->getImage()
-                ];
-
-                // If the post never has a notification message on discord, then create one!
-                if (!$discordNotification) {
-                    $discordNotification = new HoyolabPostDiscordNotification();
-                    $discordNotification->setHoyolabPost($hoyoPost);
-                }
-                $discordNotification->setProcessDate(new \DateTime());
-                $this->entityManager->persist($discordNotification);
-            }
-
-            // Treat discord notification
-            $this->embedNotification($webhookUrl, $postEmbedData);
-
-            // Flush
-            $this->entityManager->flush();
+            // Multithreading
+            $poolUsers->add(function () use ($hoyoUser) {
+                return $this->processHoyolabUserForPostsNotification($hoyoUser);
+            })
+                ->then(function ($output) {
+                    $this->counter1 += (int) $output;
+                })->catch(function ($exception) {
+                    dump($exception);
+                    // When an exception is thrown from within a process, it's caught and passed here.
+                });
+            // TODO : Logger
+            dump($this->counter1 . ' users treated');
         }
     }
 
+
+    /**
+     * @param $hoyoUser
+     * @return bool
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    private function processHoyolabUserForPostsNotification($hoyoUser): bool
+    {
+        // Get user key to decrypt the webhookUrl
+        $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
+        $webhookUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $userKey);
+
+        // Hoyo Posts
+        $postEmbedData = [];
+        // No posts
+        if (empty($hoyoUser->getHoyolabPosts()->toArray())) {
+            return false;
+        }
+
+        $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
+        /** @var HoyolabPost $hoyoPost */
+        $poolPosts = Pool::create();
+        $poolPosts  // Execute 10 per 10
+            ->concurrency(10);
+
+        $this->counter2 = 0;
+        foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
+            $poolPosts->add(function () use ($hoyoPost, $postEmbedData) {
+                    return $this->processHoyolabPostsNotification($hoyoPost, $postEmbedData);
+                })->then(function ($output) use ($hoyoUser) {
+                    /** @var HoyolabPostUser $hoyoUser */
+                    $this->counter2 += !empty($output) ? 1 : 0;
+                    $this->arr[$hoyoUser->getUid()] = $output;
+                });
+        }
+
+        dump($webhookUrl);
+
+        // TODO : Logger
+        dump($this->counter2 . ' Posts notifiés pour l\'uid ' . $hoyoUser->getUid());
+
+        // Treat discord notification
+        $this->embedNotification($webhookUrl, $this->arr[$hoyoUser->getUid()]);
+
+        // Flush
+        $this->entityManager->flush();
+        return true;
+    }
+
+    /**
+     * @param $hoyoPost
+     * @param $postEmbedData
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    private function processHoyolabPostsNotification($hoyoPost, $postEmbedData): array
+    {
+        $newStats = $hoyoPost->getHoyolabPostStats();
+        $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
+
+        $post = $this->updateHoyolabPost($hoyoPost->getPostId());
+        $oldStats = [];
+        $statsData = [];
+        // Update the hoyo post here
+        if (array_key_exists('post', $post['data'])) {
+            $postData = $post['data']['post']['post'];
+            $statsData = $post['data']['post']['stat'];
+
+            // Don't update if there is no new replies
+            dump($this->counter1++);
+            if ((int)$statsData['reply_num'] === $newStats->getReply()) {
+                return [];
+            }
+
+            $oldStats = [
+                'like_num' => $newStats->getLikes(),
+                'view_num' => $newStats->getView(),
+                'bookmark_num' => $newStats->getBookmark(),
+                'share_num' => $newStats->getShare(),
+                'reply_num' => $newStats->getReply()
+            ];
+
+            // Hoyolab Post Stats
+            $newStats->setLikes($statsData['like_num']);
+            $newStats->setBookmark($statsData['bookmark_num']);
+            $newStats->setReply($statsData['reply_num']);
+            $newStats->setShare($statsData['share_num']);
+            $newStats->setView($statsData['view_num']);
+
+            if ($postData['reply_time'])
+                $hoyoPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
+            $hoyoPost->setSubject($postData['subject']);
+
+            $this->entityManager->persist($hoyoPost);
+            // Only persist the new stats
+            $this->entityManager->persist($newStats);
+        }
+
+        $diffView = (int)$statsData['view_num'] - $oldStats['view_num'];
+        $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
+
+        $diffBookmark = (int)$statsData['bookmark_num'] - $oldStats['bookmark_num'];
+        $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
+
+        $diffLike = (int)$statsData['like_num'] - $oldStats['like_num'];
+        $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
+
+        $diffShare = (int)$statsData['share_num'] - $oldStats['share_num'];
+        $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
+
+        $diffReply = (int)$statsData['reply_num'] - $oldStats['reply_num'];
+        $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
+
+        // Compare cron stats with updated stats
+        $statistics = [
+            'view' => $oldStats['view_num'] . $diffView,
+            'bookmark' => $oldStats['bookmark_num'] . $diffBookmark,
+            'like' => $oldStats['like_num'] . $diffLike,
+            'share' => $oldStats['share_num'] . $diffShare,
+            'reply' => $oldStats['reply_num'] . $diffReply,
+        ];
+
+        // Prepare embed data
+        $postEmbedData[] = [
+            'postId' => $hoyoPost->getPostId(),
+            'news' => $newStats->getReply() - $oldStats['reply_num'],
+            'subject' => $hoyoPost->getSubject(),
+            'stats' => $statistics,
+            'postCreationDate' => $hoyoPost->getPostCreationDate(),
+            'hoyoUserImage' => $hoyoPost->getImage()
+        ];
+
+        dump($postEmbedData);
+        // If the post never has a notification message on discord, then create one!
+        if (!$discordNotification) {
+            $discordNotification = new HoyolabPostDiscordNotification();
+            $discordNotification->setHoyolabPost($hoyoPost);
+        }
+        $discordNotification->setProcessDate(new \DateTime());
+        $this->entityManager->persist($discordNotification);
+
+        // To increment
+        return $postEmbedData;
+    }
 
     /**
      * Send discord notification
@@ -192,6 +255,8 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
             $messages[] = $message;
         }
+
+        dump($messages);
 
         foreach ($messages as $send) {
             $response = $this->client->request('POST', $webhook . '?wait=true', [
