@@ -73,7 +73,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 return $this->processHoyolabUserForPostsNotification($hoyoUser);
             })
                 ->then(function ($output) {
-                    $this->counter1 += (int) $output;
+                    $this->counter1 += (int)$output;
                 })->catch(function ($exception) {
                     dump($exception);
                     // When an exception is thrown from within a process, it's caught and passed here.
@@ -106,17 +106,22 @@ class HoyolabPostDiscordNotificationController extends AbstractController
         /** @var HoyolabPost $hoyoPost */
         $poolPosts = Pool::create();
         $poolPosts  // Execute 10 per 10
-            ->concurrency(10);
+        ->concurrency(10);
 
         $this->counter2 = 0;
+
         foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
-            $poolPosts->add(function () use ($hoyoPost, $postEmbedData) {
-                    return $this->processHoyolabPostsNotification($hoyoPost, $postEmbedData);
-                })->then(function ($output) use ($hoyoUser) {
-                    /** @var HoyolabPostUser $hoyoUser */
-                    $this->counter2 += !empty($output) ? 1 : 0;
-                    $this->arr[$hoyoUser->getUid()] = $output;
-                });
+            $poolPosts->add(function () use ($hoyoPost, $postEmbedData, $webhookUrl, $hoyoUser) {
+                if (!empty($hoyoPostData = $this->processHoyolabPostsNotification($hoyoPost, $postEmbedData))) {
+                    // TODO : Send message
+                    $this->embedNotification($webhookUrl, $hoyoPostData);
+                }
+                return [];
+            })->then(function ($output) use ($hoyoUser) {
+                /** @var HoyolabPostUser $hoyoUser */
+                $this->counter2 += !empty($output) ? 1 : 0;
+                $this->arr[$hoyoUser->getUid()] = $output;
+            });
         }
 
         dump($webhookUrl);
@@ -259,7 +264,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
         dump($messages);
 
         foreach ($messages as $send) {
-            $response = $this->client->request('POST', $webhook . '?wait=true', [
+            $response = $this->client->request('POST', $webhook /*. '?wait=true'*/, [
                 'headers' => [
                     'Content-Type: application/json',
                     'Accept: application/json',
