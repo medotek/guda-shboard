@@ -11,6 +11,7 @@ use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,6 +23,9 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Spatie\Async\Pool;
 
+/**
+ * @Route("/api")
+ */
 class HoyolabPostDiscordNotificationController extends AbstractController
 {
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
@@ -30,6 +34,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     private EntityManagerInterface $entityManager;
     private int $counter1 = 0;
     private int $counter2 = 0;
+    private int $errorCounter = 0;
     private array $arr;
 
     public function __construct(
@@ -47,9 +52,10 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
     /**
      * @Route("/hoyolab/cron/update/all", name="first_cron")
-     * @throws \Exception
+     * @throws Exception
+     * @throws TransportExceptionInterface
      */
-    public function discordNotificationCron(): void
+    public function discordNotificationCron()
     {
         $poolUsers = Pool::create();
         $poolUsers
@@ -75,25 +81,39 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 ->then(function ($output) {
                     $this->counter1 += (int)$output;
                 })->catch(function ($exception) {
+                    $this->errorCounter++;
                     dump($exception);
                     // When an exception is thrown from within a process, it's caught and passed here.
                 });
             // TODO : Logger
+
             dump($this->counter1 . ' users treated');
         }
+        $poolUsers->wait();
+        // Await asynchronous task
+        dump($this->arr);
+        // TODO : Maybe make it async
+        // Treat discord notification
+        $this->embedNotification($this->arr);
+
+        dump($poolUsers->getFinished());
+        if (empty($poolUsers->getFailed())) {
+            // $this->entityManager->flush();
+            return $this->json(['success' => $this->counter1, 'posts' => $this->counter2]);
+        }
+
+        return $this->json(['error' => $this->errorCounter], 500);
     }
 
 
     /**
      * @param $hoyoUser
-     * @return bool
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @return false
      */
     private function processHoyolabUserForPostsNotification($hoyoUser): bool
     {
-        // Get user key to decrypt the webhookUrl
-        $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
-        $webhookUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $userKey);
+        /** @var HoyolabPostUser $hoyoUser */
+        dump($hoyoUser->getUid());
 
         // Hoyo Posts
         $postEmbedData = [];
@@ -120,20 +140,17 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             })->then(function ($output) use ($hoyoUser) {
                 /** @var HoyolabPostUser $hoyoUser */
                 $this->counter2 += !empty($output) ? 1 : 0;
-                $this->arr[$hoyoUser->getUid()] = $output;
+                if (!empty($output)) {
+                    $this->arr[$hoyoUser->getUid()][] = $output;
+                }
             });
         }
-
-        dump($webhookUrl);
+        $poolPosts->wait();
+        // TODO : send discord notification after treating hoyo accounts -> $this->arr[uid]
 
         // TODO : Logger
         dump($this->counter2 . ' Posts notifiés pour l\'uid ' . $hoyoUser->getUid());
-
-        // Treat discord notification
-        $this->embedNotification($webhookUrl, $this->arr[$hoyoUser->getUid()]);
-
         // Flush
-        $this->entityManager->flush();
         return true;
     }
 
@@ -141,10 +158,11 @@ class HoyolabPostDiscordNotificationController extends AbstractController
      * @param $hoyoPost
      * @param $postEmbedData
      * @return array
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     private function processHoyolabPostsNotification($hoyoPost, $postEmbedData): array
     {
+        /** @var HoyolabPost $hoyoPost */
         $newStats = $hoyoPost->getHoyolabPostStats();
         $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
 
@@ -157,7 +175,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $statsData = $post['data']['post']['stat'];
 
             // Don't update if there is no new replies
-            dump($this->counter1++);
+            dump($hoyoPost->getPostId());
             if ((int)$statsData['reply_num'] === $newStats->getReply()) {
                 return [];
             }
@@ -211,7 +229,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
         ];
 
         // Prepare embed data
-        $postEmbedData[] = [
+        $postEmbedData = [
             'postId' => $hoyoPost->getPostId(),
             'news' => $newStats->getReply() - $oldStats['reply_num'],
             'subject' => $hoyoPost->getSubject(),
@@ -235,36 +253,44 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
     /**
      * Send discord notification
-     * @param $webhook
-     * @param $embeds
+     * @param $array
      * @return void
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
-    private function embedNotification($webhook, $embeds): void
+    private function embedNotification($array): void
     {
-        if (!is_array($embeds) || empty($embeds)) {
+        if (!is_array($array) || empty($array)) {
             return;
         }
 
-        $embedsGroups = array_chunk($embeds, 10);
+        // TODO : ? maybe make it async with pool
+        foreach ($array as $uid => $userPosts) {
+            // On estime qu'un compte hoyolab n'est uniquement lié qu'a un utilisateur
+            /** @var HoyolabPostUser $hoyoUser */
+            $hoyoUser = $this->hoyolabPostUserRepository->findOneBy(['uid' => $uid]);
+            // Get user key to decrypt the webhookUrl
+            $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
+            $webhookUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $userKey);
+            // Eviter trop d'envoi de message discord dans le webhook, on groupe par 10
+            $embedsGroups = array_chunk($userPosts, 10);
 
-        // groups of 10
-        $messages = [];
-        foreach ($embedsGroups as $embedsGroup) {
+            // groups of 10
+            $messages = [];
+            foreach ($embedsGroups as $embedsGroup) {
 
-            // Treat 10 values
-            $message['embeds'] = [];
-            foreach ($embedsGroup as $embed) {
-                $message['embeds'][] = $this->embed($embed);
+                // Treat 10 values
+                $message['embeds'] = [];
+                foreach ($embedsGroup as $embed) {
+                    $message['embeds'][] = $this->embed($embed);
+                }
+
+                $messages[] = $message;
             }
 
-            $messages[] = $message;
-        }
-
-        dump($messages);
+            dump($messages);
 
         foreach ($messages as $send) {
-            $response = $this->client->request('POST', $webhook /*. '?wait=true'*/, [
+            $response = $this->client->request('POST', $webhookUrl /*. '?wait=true'*/, [
                 'headers' => [
                     'Content-Type: application/json',
                     'Accept: application/json',
@@ -272,15 +298,16 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 'body' => json_encode($send)
             ]);
 
-            if ($response->getStatusCode() === 200) {
-                try {
-                    continue;
-                } catch (ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
-                    // TODO : logger
-                    dump($e);
+                if ($response->getStatusCode() === 200) {
+                    try {
+                        continue;
+                    } catch (ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
+                        // TODO : logger
+                        dump($e);
+                    }
+                } else {
+                    dump('error');
                 }
-            } else {
-                dump('error');
             }
         }
     }
@@ -333,7 +360,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     /**
      * @return array
      * Fetch hoyolab article data
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     private function updateHoyolabPost(int $id): array
     {
