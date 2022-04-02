@@ -5,10 +5,12 @@ namespace App\Entity;
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\HoyolabPostRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=HoyolabPostRepository::class)
+ * @UniqueEntity(fields="postId", message="The post already exists")
  */
 class HoyolabPost
 {
@@ -21,7 +23,7 @@ class HoyolabPost
 
     /**
      * @Groups("hoyolab_post_user")
-     * @ORM\Column(type="string", length=15)
+     * @ORM\Column(type="string", length=15, unique=true)
      */
     public $postId;
 
