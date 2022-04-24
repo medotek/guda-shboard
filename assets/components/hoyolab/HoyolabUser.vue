@@ -57,6 +57,9 @@
       </b-row>
     </div>
 
+    <!--    -->
+    <Stats></Stats>
+
     <div class="wrapper">
       <div class="h3">Account posts</div>
       <b-row>
@@ -93,9 +96,13 @@
 
 <script>
 import {mapActions} from "vuex";
+import Stats from "../Stats";
 
 export default {
   name: "HoyolabUserStats",
+  components: {
+    Stats
+  },
   beforeMount() {
     this.hoyoInit()
   },

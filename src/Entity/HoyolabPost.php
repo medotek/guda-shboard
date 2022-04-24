@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\HoyolabPostRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -82,6 +84,16 @@ class HoyolabPost
      * @ORM\OneToOne(targetEntity=HoyolabPostDiscordNotification::class, mappedBy="hoyolabPost", cascade={"persist", "remove"})
      */
     private $hoyolabPostDiscordNotification;
+
+    /**
+     * @ORM\OneToMany(targetEntity=HoyolabStats::class, mappedBy="hoyolabPost")
+     */
+    private $hoyolabStats;
+
+    public function __construct()
+    {
+        $this->hoyolabStats = new ArrayCollection();
+    }
 
 
     public function getId(): ?int
@@ -237,6 +249,36 @@ class HoyolabPost
         }
 
         $this->hoyolabPostDiscordNotification = $hoyolabPostDiscordNotification;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|HoyolabStats[]
+     */
+    public function getHoyolabStats(): Collection
+    {
+        return $this->hoyolabStats;
+    }
+
+    public function addHoyolabStat(HoyolabStats $hoyolabStat): self
+    {
+        if (!$this->hoyolabStats->contains($hoyolabStat)) {
+            $this->hoyolabStats[] = $hoyolabStat;
+            $hoyolabStat->setHoyolabPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHoyolabStat(HoyolabStats $hoyolabStat): self
+    {
+        if ($this->hoyolabStats->removeElement($hoyolabStat)) {
+            // set the owning side to null (unless already changed)
+            if ($hoyolabStat->getHoyolabPost() === $this) {
+                $hoyolabStat->setHoyolabPost(null);
+            }
+        }
 
         return $this;
     }
