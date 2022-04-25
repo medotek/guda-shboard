@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Contract\Encryption\EncryptionManager;
 use App\Entity\HoyolabPost;
 use App\Entity\HoyolabPostStats;
 use App\Entity\HoyolabPostUser;
@@ -38,7 +39,6 @@ class HoyolabPostsWebhookController extends AbstractController
     private EntityManagerInterface $entityManager;
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
     private UserRepository $userRepository;
-    private EncryptionManagerController $encryptionManager;
     private SerializerInterface $serializer;
 
     public function __construct(
@@ -48,8 +48,7 @@ class HoyolabPostsWebhookController extends AbstractController
         EntityManagerInterface      $entityManager,
         HoyolabPostUserRepository   $hoyolabPostUserRepository,
         UserRepository              $userRepository,
-        SerializerInterface         $serializer,
-        EncryptionManagerController $encryptionManager
+        SerializerInterface         $serializer
     )
     {
         $this->client = $client;
@@ -59,7 +58,6 @@ class HoyolabPostsWebhookController extends AbstractController
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
-        $this->encryptionManager = $encryptionManager;
     }
 
     /**
@@ -370,7 +368,7 @@ class HoyolabPostsWebhookController extends AbstractController
             }
         }
 
-        $decryptedExistingUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
+        $decryptedExistingUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
 
         if ($decryptedExistingUrl === $jsonData->webhookUrl) {
             return $this->json('Same webhook url', 400);
@@ -386,7 +384,7 @@ class HoyolabPostsWebhookController extends AbstractController
                 array_key_exists('id', $content) &&
                 array_key_exists('name', $content)
             ) {
-                $hoyoUser->setWebhookUrl($this->encryptionManager->encrypt($jsonData->webhookUrl, $user->getCreationDate()->getTimestamp()));
+                $hoyoUser->setWebhookUrl(EncryptionManager::encrypt($jsonData->webhookUrl, $user->getCreationDate()->getTimestamp()));
                 $this->entityManager->persist($hoyoUser);
                 $this->entityManager->flush();
             }

@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Contract\Encryption\EncryptionManager;
+use App\Contract\Request\HoyolabRequest;
 use App\Entity\HoyolabPost;
 use App\Entity\HoyolabPostDiscordNotification;
 use App\Entity\HoyolabPostStats;
@@ -24,21 +26,18 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class HoyolabPostDiscordNotificationController extends AbstractController
 {
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
-    private EncryptionManagerController $encryptionManager;
-    private HttpClientInterface $client;
     private EntityManagerInterface $entityManager;
+    private HoyolabRequest $hoyolabRequest;
 
     public function __construct(
         HoyolabPostUserRepository   $hoyolabPostUserRepository,
-        EncryptionManagerController $encryptionManager,
-        HttpClientInterface         $client,
-        EntityManagerInterface      $entityManager
+        EntityManagerInterface      $entityManager,
+        HoyolabRequest $hoyolabRequest
     )
     {
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
-        $this->encryptionManager = $encryptionManager;
-        $this->client = $client;
         $this->entityManager = $entityManager;
+        $this->hoyolabRequest = $hoyolabRequest;
     }
 
     /**
@@ -60,8 +59,9 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
             // Get user key to decrypt the webhookUrl
             $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
-            $webhookUrl = $this->encryptionManager->decrypt($hoyoUser->getWebhookUrl(), $userKey);
+            $webhookUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $userKey);
 
+            dump($webhookUrl);
             // Hoyo Posts
             $postEmbedData = [];
             // No posts
@@ -75,8 +75,8 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
                 $newStats = $hoyoPost->getHoyolabPostStats();
                 $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
+                $post = $this->hoyolabRequest->updateHoyolabPost($hoyoPost->getPostId());
 
-                $post = $this->updateHoyolabPost($hoyoPost->getPostId());
                 $oldStats = [];
                 $statsData = [];
                 // Update the hoyo post here
@@ -160,7 +160,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $this->embedNotification($webhookUrl, $postEmbedData);
 
             // Flush
-            $this->entityManager->flush();
+            // $this->entityManager->flush();
         }
     }
 
@@ -258,26 +258,5 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             ]
 //            "timestamp" => $embed['postCreationDate']
         ];
-    }
-
-    /**
-     * @return array
-     * Fetch hoyolab article data
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
-     */
-    private function updateHoyolabPost(int $id): array
-    {
-        $hoyolabArticle = 'https://bbs-api-os.hoyolab.com/community/post/wapi/getPostFull?gids=2&post_id=' . $id . '&read=1';
-
-        $response = $this->client->request('GET', $hoyolabArticle);
-        if ($response->getStatusCode() === 200) {
-            try {
-                return $response->toArray();
-            } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
-                // TODO : logger
-                dump($e);
-            }
-        }
-        return ['error' => []];
     }
 }

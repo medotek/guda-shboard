@@ -2,8 +2,7 @@
 
 namespace App\Command;
 
-use App\Controller\EncryptionManagerController;
-use App\Controller\HoyolabPostDiscordNotificationController;
+use App\Contract\Request\HoyolabRequest;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -15,24 +14,21 @@ class HoyoPostsNotificationCommand extends Command
 {
     protected static $defaultName = 'app:guda:hoyo-discord-notification';
     private EntityManagerInterface $entityManager;
-    private EncryptionManagerController $encryptionManager;
-    private HttpClientInterface $client;
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
+    private HoyolabRequest $hoyolabRequest;
 
     public function __construct(
         string $name = null,
         EntityManagerInterface $entityManager,
-        EncryptionManagerController $encryptionManager,
-        HttpClientInterface $client,
-        HoyolabPostUserRepository $hoyolabPostUserRepository
+        HoyolabPostUserRepository $hoyolabPostUserRepository,
+        HoyolabRequest $hoyolabRequest
     )
     {
         parent::__construct($name);
 
         $this->entityManager = $entityManager;
-        $this->encryptionManager = $encryptionManager;
-        $this->client = $client;
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
+        $this->hoyolabRequest = $hoyolabRequest;
     }
 
     protected function configure(): void
@@ -46,7 +42,7 @@ class HoyoPostsNotificationCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $taskForce = new \App\Controller\HoyolabPostDiscordNotificationController( $this->hoyolabPostUserRepository, $this->encryptionManager,$this->client, $this->entityManager);
+        $taskForce = new \App\Controller\HoyolabPostDiscordNotificationController( $this->hoyolabPostUserRepository, $this->entityManager, $this->hoyolabRequest);
         $taskForce->discordNotificationCron();
         return Command::SUCCESS;
     }
