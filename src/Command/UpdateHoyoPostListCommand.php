@@ -25,7 +25,6 @@ class UpdateHoyoPostListCommand extends Command
     private Security $security;
     private UserRepository $userRepository;
     private SerializerInterface $serializer;
-    private EncryptionManagerController $encryptionManager;
 
     public function __construct(
         string $name = null,
@@ -35,8 +34,7 @@ class UpdateHoyoPostListCommand extends Command
         HoyolabPostRepository $hoyolabPostRepository,
         UserRepository              $userRepository,
         SerializerInterface         $serializer,
-        Security                    $security,
-        EncryptionManagerController $encryptionManager
+        Security                    $security
     )
     {
         parent::__construct($name);
@@ -48,7 +46,6 @@ class UpdateHoyoPostListCommand extends Command
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
         $this->security = $security;
-        $this->encryptionManager = $encryptionManager;
     }
 
     protected function configure(): void
@@ -69,8 +66,7 @@ class UpdateHoyoPostListCommand extends Command
             $this->entityManager,
             $this->hoyolabPostUserRepository,
             $this->userRepository,
-            $this->serializer,
-            $this->encryptionManager
+            $this->serializer
         );
 
         $taskForce->updateHoyolabUserPostsList();
