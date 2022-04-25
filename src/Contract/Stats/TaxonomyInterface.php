@@ -12,12 +12,18 @@ interface TaxonomyInterface
     public const REPLIES = 'REPLIES';
     public const BOOKMARKS = 'bookmarks';
 
+    public const LIKES_MAPPING = 'like_num';
+    public const VIEWS_MAPPING = 'view_num';
+    public const BOOKMARKS_MAPPING = 'bookmark_num';
+    public const SHARES_MAPPING = 'share_num';
+    public const REPLIES_MAPPING = 'reply_num';
+
     public const ALL_TAXONOMIES = [
-        self::VIEWS,
-        self::LIKES,
-        self::SHARES,
-        self::REPLIES,
-        self::BOOKMARKS,
+        self::VIEWS_MAPPING => self::VIEWS,
+        self::LIKES_MAPPING =>self::LIKES,
+        self::SHARES_MAPPING => self::SHARES,
+        self::REPLIES_MAPPING => self::REPLIES,
+        self::BOOKMARKS_MAPPING => self::BOOKMARKS,
     ];
 
     /**

@@ -9,6 +9,7 @@ use App\Entity\HoyolabPostDiscordNotification;
 use App\Entity\HoyolabPostStats;
 use App\Entity\HoyolabPostUser;
 use App\Entity\User;
+use App\Helper\Discord\EmbedBuilder;
 use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -61,7 +62,6 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
             $webhookUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $userKey);
 
-            dump($webhookUrl);
             // Hoyo Posts
             $postEmbedData = [];
             // No posts
@@ -160,6 +160,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $this->embedNotification($webhookUrl, $postEmbedData);
 
             // Flush
+            // TODO : REMOVE FOR PROD
             // $this->entityManager->flush();
         }
     }
@@ -187,20 +188,14 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             // Treat 10 values
             $message['embeds'] = [];
             foreach ($embedsGroup as $embed) {
-                $message['embeds'][] = $this->embed($embed);
+                $message['embeds'][] = EmbedBuilder::hoyolabNotification($embed);
             }
 
             $messages[] = $message;
         }
 
         foreach ($messages as $send) {
-            $response = $this->client->request('POST', $webhook . '?wait=true', [
-                'headers' => [
-                    'Content-Type: application/json',
-                    'Accept: application/json',
-                ],
-                'body' => json_encode($send)
-            ]);
+            $response = $this->hoyolabRequest->sendDiscordEmbed($webhook, $send);
 
             if ($response->getStatusCode() === 200) {
                 try {
@@ -213,50 +208,5 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 dump('error');
             }
         }
-    }
-
-    /**
-     * Return a single embed array
-     * @param $embed
-     * @return array
-     */
-    private function embed($embed): array
-    {
-        $s = '';
-        $x = '';
-        if ($embed['news'] > 1) {
-            $s = 's';
-            $x = 'x';
-        }
-
-        $desc = "Vous avez **{$embed['news']}** nouveau{$x} message{$s} sur ce post hoyo";
-
-        return [
-            "color" => 6651640,
-            "title" => $embed['subject'],
-            "url" => "https://hoyolab.com/article/{$embed['postId']}",
-            "description" => $desc,
-            "fields" => [
-                [
-                    "name" => "**Views**",
-                    "value" => $embed['stats']['view'],
-                    "inline" => true
-                ],
-                [
-                    "name" => "**Replies**",
-                    "value" => $embed['stats']['reply'],
-                    "inline" => true
-                ],
-                [
-                    "name" => "**Likes**",
-                    "value" => $embed['stats']['like'],
-                    "inline" => true
-                ]
-            ],
-            "thumbnail" => [
-                "url" => $embed['hoyoUserImage']
-            ]
-//            "timestamp" => $embed['postCreationDate']
-        ];
     }
 }
