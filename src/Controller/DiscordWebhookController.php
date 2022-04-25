@@ -2,11 +2,11 @@
 
 namespace App\Controller;
 
+use App\Contract\Encryption\EncryptionManager;
 use App\Entity\DiscordWebhook;
 use App\Entity\User;
 use App\Repository\DiscordWebhookRepository;
 use App\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,7 +33,6 @@ class DiscordWebhookController extends AbstractController
     private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
     private Security $security;
-    private EncryptionManagerController $encryptionManager;
 
     public function __construct(
         HttpClientInterface      $client,
@@ -41,8 +40,7 @@ class DiscordWebhookController extends AbstractController
         UserRepository           $userRepository,
         SerializerInterface      $serializer,
         EntityManagerInterface   $entityManager,
-        Security                 $security,
-        EncryptionManagerController $encryptionManager
+        Security                 $security
     )
     {
         $this->client = $client;
@@ -51,7 +49,6 @@ class DiscordWebhookController extends AbstractController
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->security = $security;
-        $this->encryptionManager = $encryptionManager;
     }
 
     /**
@@ -84,7 +81,7 @@ class DiscordWebhookController extends AbstractController
                     $discordWebhook->setAvatarId($content['avatar']);
                     $discordWebhook->setChannelId($content['channel_id']);
                     $discordWebhook->setGuildId($content['guild_id']);
-                    $discordWebhook->setToken($this->encryptionManager->encrypt($content['token'], $existingUser->getCreationDate()->getTimestamp()));
+                    $discordWebhook->setToken(EncryptionManager::encrypt($content['token'], $existingUser->getCreationDate()->getTimestamp()));
                     $discordWebhook->setOwner($existingUser);
                     // Persist discordWebhook
                     $this->entityManager->persist($discordWebhook);
@@ -118,7 +115,6 @@ class DiscordWebhookController extends AbstractController
         $webhooks = $this->discordWebhookRepository->findBy(["owner" => $user]);
 
         if (!empty($webhooks) && $user) {
-
             return $this->json([
                 'webhooks' => $this->serializer->serialize($webhooks, 'json')
             ]);
