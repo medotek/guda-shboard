@@ -67,7 +67,19 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
                         $hourFirstHalf = new \DateTime($currentHour. ':00');
                         $hourEndFirstHalf = new \DateTime($currentHour. ':30');
                         if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
-                            // TODO : Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
+                            // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
+                            $qb = $this->entityManager->createQueryBuilder();
+                            $qb->select('*');
+                            $qb->from('HoyolabStats', 'hs');
+                            $qb->where('hs.date BETWEEN :from AND :to AND hoyolabPost = :post');
+                            $qb->setParameter('from', $hourFirstHalf);
+                            $qb->setParameter('to', $hourEndFirstHalf);
+                            $qb->setParameter('post', $hoyoPost);
+                            $query = $qb->getQuery();
+
+                            if ($query->getResult()) {
+                                continue;
+                            }
 
                             $stat = new HoyolabStats();
                             $stat->setDate(new \DateTime());
