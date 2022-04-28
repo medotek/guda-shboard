@@ -9,6 +9,7 @@ use App\Contract\Stats\TaxonomyInterface;
 use App\Entity\HoyolabPost;
 use App\Entity\HoyolabPostUser;
 use App\Entity\HoyolabStats;
+use App\Entity\HoyolabStatType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -56,33 +57,33 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
                     $currentHour = date('H', $date);
                     $hourFirstHalf = new \DateTime($currentHour . ':00');
                     $hourEndFirstHalf = new \DateTime($currentHour . ':30');
-//                        if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
-                    // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
-                    $qb = $this->entityManager->createQueryBuilder();
-                    $qb->select('hs');
-                    $qb->from(' App:HoyolabStats', 'hs');
-                    $qb->where('hs.date BETWEEN :from AND :to AND hs.hoyolabPost = :post');
-                    $qb->setParameter('from', $hourFirstHalf);
-                    $qb->setParameter('to', $hourEndFirstHalf);
-                    $qb->setParameter('post', $hoyoPost);
-                    $query = $qb->getQuery();
+                    if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
+                        // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
+                        $qb = $this->entityManager->createQueryBuilder();
+                        $qb->select('hs');
+                        $qb->from(' App:HoyolabStats', 'hs');
+                        $qb->where('hs.date BETWEEN :from AND :to AND hs.hoyolabPost = :post');
+                        $qb->setParameter('from', $hourFirstHalf);
+                        $qb->setParameter('to', $hourEndFirstHalf);
+                        $qb->setParameter('post', $hoyoPost);
+                        $query = $qb->getQuery();
 
-                    if ($query->getResult()) {
-                        continue;
+                        if ($query->getResult()) {
+                            continue;
+                        }
+
+                        dump('creating !');
+
+                        $stat = new HoyolabStats();
+                        $stat->setDate(new \DateTime());
+                        $stat->setView($statsData[self::VIEWS_MAPPING]);
+                        $stat->setLikes($statsData[self::LIKES_MAPPING]);
+                        $stat->setReply($statsData[self::REPLIES_MAPPING]);
+                        $stat->setShare($statsData[self::SHARES_MAPPING]);
+                        $stat->setBookmark($statsData[self::BOOKMARKS_MAPPING]);
+                        $stat->setHoyolabPost($hoyoPost);
+                        $this->entityManager->persist($stat);
                     }
-
-                    dump('creating !');
-
-                    $stat = new HoyolabStats();
-                    $stat->setDate(new \DateTime());
-                    $stat->setView($statsData[self::VIEWS_MAPPING]);
-                    $stat->setLikes($statsData[self::LIKES_MAPPING]);
-                    $stat->setReply($statsData[self::REPLIES_MAPPING]);
-                    $stat->setShare($statsData[self::SHARES_MAPPING]);
-                    $stat->setBookmark($statsData[self::BOOKMARKS_MAPPING]);
-                    $stat->setHoyolabPost($hoyoPost);
-                    $this->entityManager->persist($stat);
-//                        }
                 }
             }
 
