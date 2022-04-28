@@ -57,8 +57,8 @@
       </b-row>
     </div>
 
-    <!--    -->
-    <Stats></Stats>
+<!--    &lt;!&ndash;    &ndash;&gt;-->
+<!--    <Stats></Stats>-->
 
     <div class="wrapper">
       <div class="h3">Account posts</div>
