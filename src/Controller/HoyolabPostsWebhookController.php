@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Contract\Encryption\EncryptionManager;
+use App\Contract\Stats\TaxonomyInterface;
 use App\Entity\HoyolabPost;
 use App\Entity\HoyolabPostStats;
 use App\Entity\HoyolabPostUser;
+use App\Entity\HoyolabStats;
 use App\Entity\User;
 use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostStatsRepository;
@@ -314,11 +316,21 @@ class HoyolabPostsWebhookController extends AbstractController
         }
 
         // Hoyolab Post Stats
-        $hoyolabPostStats->setLikes($statsData['like_num']);
-        $hoyolabPostStats->setBookmark($statsData['bookmark_num']);
-        $hoyolabPostStats->setReply($statsData['reply_num']);
-        $hoyolabPostStats->setShare($statsData['share_num']);
-        $hoyolabPostStats->setView($statsData['view_num']);
+        $hoyolabPostStats->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+        $hoyolabPostStats->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
+        $hoyolabPostStats->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+        $hoyolabPostStats->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+        $hoyolabPostStats->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+
+        // Init stats
+        $stat = new HoyolabStats();
+        $stat->setDate(new \DateTime());
+        $stat->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+        $stat->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+        $stat->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+        $stat->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+        $stat->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
+        $stat->setHoyolabPost($hoyolabPost);
 
         // Hoyolab Post
         $hoyolabPost->setCreationDate(new \DateTime());
@@ -331,6 +343,7 @@ class HoyolabPostsWebhookController extends AbstractController
         $hoyolabPost->setSubject($postData['subject']);
         $hoyolabPost->setHoyolabPostStats($hoyolabPostStats);
 
+        $this->entityManager->persist($stat);
         $this->entityManager->persist($hoyolabPost);
         $this->entityManager->persist($hoyolabPostStats);
         if ($hoyolabPostUserCreated) {
@@ -422,7 +435,7 @@ class HoyolabPostsWebhookController extends AbstractController
             } else {
                 return;
             }
-            dump($postList);
+
             // Verify unexisting posts
             foreach ($postList as $post) {
                 $statsData = $post['stat'];
