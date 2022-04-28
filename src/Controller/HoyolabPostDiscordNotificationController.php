@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\Contract\Encryption\EncryptionManager;
 use App\Contract\Request\HoyolabRequest;
+use App\Contract\Stats\TaxonomyInterface;
 use App\Entity\HoyolabPost;
 use App\Entity\HoyolabPostDiscordNotification;
 use App\Entity\HoyolabPostStats;
 use App\Entity\HoyolabPostUser;
+use App\Entity\HoyolabStats;
 use App\Entity\User;
 use App\Helper\Discord\EmbedBuilder;
 use App\Repository\HoyolabPostRepository;
@@ -84,25 +86,57 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     $postData = $post['data']['post']['post'];
                     $statsData = $post['data']['post']['stat'];
 
+                    $currDateTime = new \DateTime('now');
+                    $date = strtotime($currDateTime->format('Y-m-d H:i:s'));
+                    $currentHour = date('H', $date);
+                    $hourFirstHalf = new \DateTime($currentHour . ':00');
+                    $hourEndFirstHalf = new \DateTime($currentHour . ':30');
+                    if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
+                        // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
+                        $qb = $this->entityManager->createQueryBuilder();
+                        $qb->select('hs');
+                        $qb->from(' App:HoyolabStats', 'hs');
+                        $qb->where('hs.date BETWEEN :from AND :to AND hs.hoyolabPost = :post');
+                        $qb->setParameter('from', $hourFirstHalf);
+                        $qb->setParameter('to', $hourEndFirstHalf);
+                        $qb->setParameter('post', $hoyoPost);
+                        $query = $qb->getQuery();
+
+                        if ($query->getResult()) {
+                            continue;
+                        }
+
+                        $stat = new HoyolabStats();
+                        $stat->setDate(new \DateTime());
+                        $stat->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+                        $stat->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+                        $stat->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+                        $stat->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+                        $stat->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
+                        $stat->setHoyolabPost($hoyoPost);
+                        $this->entityManager->persist($stat);
+                    }
+
+
                     // Don't update if there is no new replies
-                    if ((int)$statsData['reply_num'] === $newStats->getReply()) {
+                    if ((int)$statsData[TaxonomyInterface::REPLIES_MAPPING] === $newStats->getReply()) {
                         continue;
                     }
 
                     $oldStats = [
-                        'like_num' => $newStats->getLikes(),
-                        'view_num' => $newStats->getView(),
-                        'bookmark_num' => $newStats->getBookmark(),
-                        'share_num' => $newStats->getShare(),
-                        'reply_num' => $newStats->getReply()
+                        TaxonomyInterface::LIKES_MAPPING => $newStats->getLikes(),
+                        TaxonomyInterface::VIEWS_MAPPING => $newStats->getView(),
+                        TaxonomyInterface::BOOKMARKS_MAPPING => $newStats->getBookmark(),
+                        TaxonomyInterface::SHARES_MAPPING => $newStats->getShare(),
+                        TaxonomyInterface::REPLIES_MAPPING => $newStats->getReply()
                     ];
 
                     // Hoyolab Post Stats
-                    $newStats->setLikes($statsData['like_num']);
-                    $newStats->setBookmark($statsData['bookmark_num']);
-                    $newStats->setReply($statsData['reply_num']);
-                    $newStats->setShare($statsData['share_num']);
-                    $newStats->setView($statsData['view_num']);
+                    $newStats->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+                    $newStats->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+                    $newStats->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+                    $newStats->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+                    $newStats->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
 
                     if ($postData['reply_time'])
                         $hoyoPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
@@ -113,34 +147,36 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     $this->entityManager->persist($newStats);
                 }
 
-                $diffView = (int)$statsData['view_num'] - $oldStats['view_num'];
+
+                // TODO refacto
+                $diffView = (int)$statsData[TaxonomyInterface::VIEWS_MAPPING] - $oldStats[TaxonomyInterface::VIEWS_MAPPING];
                 $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
 
-                $diffBookmark = (int)$statsData['bookmark_num'] - $oldStats['bookmark_num'];
+                $diffBookmark = (int)$statsData[TaxonomyInterface::BOOKMARKS_MAPPING] - $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING];
                 $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
 
-                $diffLike = (int)$statsData['like_num'] - $oldStats['like_num'];
+                $diffLike = (int)$statsData[TaxonomyInterface::LIKES_MAPPING] - $oldStats[TaxonomyInterface::LIKES_MAPPING];
                 $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
 
-                $diffShare = (int)$statsData['share_num'] - $oldStats['share_num'];
+                $diffShare = (int)$statsData[TaxonomyInterface::SHARES_MAPPING] - $oldStats[TaxonomyInterface::SHARES_MAPPING];
                 $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
 
-                $diffReply = (int)$statsData['reply_num'] - $oldStats['reply_num'];
+                $diffReply = (int)$statsData[TaxonomyInterface::REPLIES_MAPPING] - $oldStats[TaxonomyInterface::REPLIES_MAPPING];
                 $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
 
                 // Compare cron stats with updated stats
                 $statistics = [
-                    'view' => $oldStats['view_num'] . $diffView,
-                    'bookmark' => $oldStats['bookmark_num'] . $diffBookmark,
-                    'like' => $oldStats['like_num'] . $diffLike,
-                    'share' => $oldStats['share_num'] . $diffShare,
-                    'reply' => $oldStats['reply_num'] . $diffReply,
+                    'view' => $oldStats[TaxonomyInterface::VIEWS_MAPPING] . $diffView,
+                    'bookmark' => $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING] . $diffBookmark,
+                    'like' => $oldStats[TaxonomyInterface::LIKES_MAPPING] . $diffLike,
+                    'share' => $oldStats[TaxonomyInterface::SHARES_MAPPING] . $diffShare,
+                    'reply' => $oldStats[TaxonomyInterface::REPLIES_MAPPING] . $diffReply,
                 ];
 
                 // Prepare embed data
                 $postEmbedData[] = [
                     'postId' => $hoyoPost->getPostId(),
-                    'news' => $newStats->getReply() - $oldStats['reply_num'],
+                    'news' => $newStats->getReply() - $oldStats[TaxonomyInterface::REPLIES_MAPPING],
                     'subject' => $hoyoPost->getSubject(),
                     'stats' => $statistics,
                     'postCreationDate' => $hoyoPost->getPostCreationDate(),
@@ -161,7 +197,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
             // Flush
             // TODO : REMOVE FOR PROD
-            // $this->entityManager->flush();
+            $this->entityManager->flush();
         }
     }
 
@@ -178,25 +214,21 @@ class HoyolabPostDiscordNotificationController extends AbstractController
         if (!is_array($embeds) || empty($embeds)) {
             return;
         }
-
         $embedsGroups = array_chunk($embeds, 10);
 
         // groups of 10
         $messages = [];
         foreach ($embedsGroups as $embedsGroup) {
-
             // Treat 10 values
             $message['embeds'] = [];
             foreach ($embedsGroup as $embed) {
                 $message['embeds'][] = EmbedBuilder::hoyolabNotification($embed);
             }
-
             $messages[] = $message;
         }
 
         foreach ($messages as $send) {
             $response = $this->hoyolabRequest->sendDiscordEmbed($webhook, $send);
-
             if ($response->getStatusCode() === 200) {
                 try {
                     continue;
