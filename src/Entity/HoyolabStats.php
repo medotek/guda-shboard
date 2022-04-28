@@ -18,20 +18,34 @@ class HoyolabStats
     private $id;
 
     /**
-     * @ORM\Column(type="integer")
-     */
-    private $number;
-
-    /**
      * @ORM\Column(type="datetime")
      */
     private $date;
 
     /**
-     * @ORM\ManyToOne(targetEntity=HoyolabStatType::class)
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\Column(type="integer")
      */
-    private $statType;
+    private $view;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $reply;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $likes;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $bookmark;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $share;
 
     /**
      * @ORM\ManyToOne(targetEntity=HoyolabPost::class, inversedBy="hoyolabStats")
@@ -43,14 +57,62 @@ class HoyolabStats
         return $this->id;
     }
 
-    public function getNumber(): ?int
+    public function getView(): ?int
     {
-        return $this->number;
+        return $this->view;
     }
 
-    public function setNumber(int $number): self
+    public function setView(int $view): self
     {
-        $this->number = $number;
+        $this->view = $view;
+
+        return $this;
+    }
+
+    public function getReply(): ?int
+    {
+        return $this->reply;
+    }
+
+    public function setReply(int $reply): self
+    {
+        $this->reply = $reply;
+
+        return $this;
+    }
+
+    public function getLikes(): ?int
+    {
+        return $this->likes;
+    }
+
+    public function setLikes(int $likes): self
+    {
+        $this->likes = $likes;
+
+        return $this;
+    }
+
+    public function getBookmark(): ?int
+    {
+        return $this->bookmark;
+    }
+
+    public function setBookmark(int $bookmark): self
+    {
+        $this->bookmark = $bookmark;
+
+        return $this;
+    }
+
+    public function getShare(): ?int
+    {
+        return $this->share;
+    }
+
+    public function setShare(int $share): self
+    {
+        $this->share = $share;
 
         return $this;
     }
@@ -63,18 +125,6 @@ class HoyolabStats
     public function setDate(\DateTimeInterface $date): self
     {
         $this->date = $date;
-
-        return $this;
-    }
-
-    public function getStatType(): ?HoyolabStatType
-    {
-        return $this->statType;
-    }
-
-    public function setStatType(?HoyolabStatType $statType): self
-    {
-        $this->statType = $statType;
 
         return $this;
     }
