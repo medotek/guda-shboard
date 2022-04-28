@@ -2,7 +2,6 @@
 
 namespace App\Command;
 
-use App\Controller\EncryptionManagerController;
 use App\Controller\HoyolabPostDiscordNotificationController;
 use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostUserRepository;
