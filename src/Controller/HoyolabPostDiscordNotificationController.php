@@ -86,37 +86,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     $postData = $post['data']['post']['post'];
                     $statsData = $post['data']['post']['stat'];
 
-                    $currDateTime = new \DateTime('now');
-                    $date = strtotime($currDateTime->format('Y-m-d H:i:s'));
-                    $currentHour = date('H', $date);
-                    $hourFirstHalf = new \DateTime($currentHour . ':00');
-                    $hourEndFirstHalf = new \DateTime($currentHour . ':30');
-                    if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
-                        // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
-                        $qb = $this->entityManager->createQueryBuilder();
-                        $qb->select('hs');
-                        $qb->from(' App:HoyolabStats', 'hs');
-                        $qb->where('hs.date BETWEEN :from AND :to AND hs.hoyolabPost = :post');
-                        $qb->setParameter('from', $hourFirstHalf);
-                        $qb->setParameter('to', $hourEndFirstHalf);
-                        $qb->setParameter('post', $hoyoPost);
-                        $query = $qb->getQuery();
-
-                        if ($query->getResult()) {
-                            continue;
-                        }
-
-                        $stat = new HoyolabStats();
-                        $stat->setDate(new \DateTime());
-                        $stat->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
-                        $stat->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
-                        $stat->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
-                        $stat->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
-                        $stat->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
-                        $stat->setHoyolabPost($hoyoPost);
-                        $this->entityManager->persist($stat);
-                    }
-
+//                    $this->saveHoyolabStats($hoyoPost, $statsData);
 
                     // Don't update if there is no new replies
                     if ((int)$statsData[TaxonomyInterface::REPLIES_MAPPING] === $newStats->getReply()) {
@@ -196,11 +166,51 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $this->embedNotification($webhookUrl, $postEmbedData);
 
             // Flush
-            // TODO : REMOVE FOR PROD
             $this->entityManager->flush();
         }
     }
 
+    /**
+     * @param HoyolabPost $hoyoPost
+     * @param array $statsData
+     * @return bool
+     * @throws \Exception
+     */
+    private function saveHoyolabStats(HoyolabPost $hoyoPost, array $statsData): bool
+    {
+        $currDateTime = new \DateTime('now');
+        $date = strtotime($currDateTime->format('Y-m-d H:i:s'));
+        $currentHour = date('H', $date);
+        $hourFirstHalf = new \DateTime($currentHour . ':00');
+        $hourEndFirstHalf = new \DateTime($currentHour . ':30');
+        if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
+            // Vérifier s'il n'y a pas un hoyoStat entity qui existe dans l'interval, meme heure
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->select('hs');
+            $qb->from(' App:HoyolabStats', 'hs');
+            $qb->where('hs.date BETWEEN :from AND :to AND hs.hoyolabPost = :post');
+            $qb->setParameter('from', $hourFirstHalf);
+            $qb->setParameter('to', $hourEndFirstHalf);
+            $qb->setParameter('post', $hoyoPost);
+            $query = $qb->getQuery();
+
+            if ($query->getResult()) {
+                return false;
+            }
+
+            $stat = new HoyolabStats();
+            $stat->setDate(new \DateTime());
+            $stat->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+            $stat->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+            $stat->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+            $stat->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+            $stat->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
+            $stat->setHoyolabPost($hoyoPost);
+            $this->entityManager->persist($stat);
+        }
+
+        return true;
+    }
 
     /**
      * Send discord notification
