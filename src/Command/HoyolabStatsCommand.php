@@ -8,22 +8,27 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class HoyolabStatsCommand extends Command
 {
     protected static $defaultName = 'app:guda:hoyo-stats';
     private EntityManagerInterface $entityManager;
     private HoyolabRequest $hoyolabRequest;
+    private HttpClientInterface $httpClient;
 
     public function __construct(
         string $name = null,
         EntityManagerInterface $entityManager,
-        HoyolabRequest         $hoyolabRequest
+        HoyolabRequest         $hoyolabRequest,
+        HttpClientInterface    $httpClient
     )
     {
         parent::__construct($name);
         $this->entityManager = $entityManager;
         $this->hoyolabRequest = $hoyolabRequest;
+        $this->httpClient     = $httpClient;
     }
 
 
@@ -35,12 +40,12 @@ class HoyolabStatsCommand extends Command
 
 
     /**
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $taskForce = new HoyolabStatsController($this->entityManager, $this->hoyolabRequest);
-        $taskForce->cronStats();
+        $taskForce = new HoyolabStatsController($this->entityManager, $this->hoyolabRequest, $this->httpClient);
+        $taskForce->cronHoyoPostStats();
         return Command::SUCCESS;
     }
 }

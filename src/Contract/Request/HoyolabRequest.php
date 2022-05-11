@@ -22,9 +22,10 @@ class HoyolabRequest
     }
 
     /**
-     * @return array
      * Fetch hoyolab article data
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @param int $id
+     * @return array
+     * @throws TransportExceptionInterface
      */
     public function updateHoyolabPost(int $id): array
     {
@@ -43,7 +44,7 @@ class HoyolabRequest
     }
 
     /**
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     public function sendDiscordEmbed($webhook, $send): ResponseInterface
     {
@@ -54,5 +55,23 @@ class HoyolabRequest
             ],
             'body' => json_encode($send)
         ]);
+    }
+
+    /**
+     * @param string $uid
+     * @return ResponseInterface
+     * @throws TransportExceptionInterface
+     */
+    public function getHoyolabUserFullInformations(string $uid): ResponseInterface
+    {
+        return $this->client->request("GET",
+            "https://bbs-api-os.hoyolab.com/community/painter/wapi/user/full?uid={$uid}",
+            [
+                'headers' => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                ],
+            ]
+        );
     }
 }

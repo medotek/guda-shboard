@@ -73,9 +73,15 @@ class HoyolabPostUser
      */
     private $webhookUrl;
 
+    /**
+     * @ORM\OneToMany(targetEntity=HoyolabUserStats::class, mappedBy="user")
+     */
+    private $stats;
+
     public function __construct()
     {
         $this->hoyolabPosts = new ArrayCollection();
+        $this->stats = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -181,6 +187,36 @@ class HoyolabPostUser
     public function setWebhookUrl(?string $webhookUrl): self
     {
         $this->webhookUrl = $webhookUrl;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, HoyolabUserStats>
+     */
+    public function getStats(): Collection
+    {
+        return $this->stats;
+    }
+
+    public function addStat(HoyolabUserStats $stat): self
+    {
+        if (!$this->stats->contains($stat)) {
+            $this->stats[] = $stat;
+            $stat->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStat(HoyolabUserStats $stat): self
+    {
+        if ($this->stats->removeElement($stat)) {
+            // set the owning side to null (unless already changed)
+            if ($stat->getUser() === $this) {
+                $stat->setUser(null);
+            }
+        }
 
         return $this;
     }

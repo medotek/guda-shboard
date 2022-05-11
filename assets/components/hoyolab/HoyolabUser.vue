@@ -57,8 +57,8 @@
       </b-row>
     </div>
 
-    <!--    -->
-    <Stats></Stats>
+    <!-- User stats -->
+    <Stats v-if="fetchNext" :data-stat="hoyoStats"></Stats>
 
     <div class="wrapper">
       <div class="h3">Account posts</div>
@@ -129,7 +129,6 @@ export default {
       if (result > 0) {
         this.missingPosts = `Il manque ${result} posts hoyolab sur le site. Regardez les plus vieux en priorité ...`
       }
-
     },
     async webhookUrlForm(e) {
       this.success = false;
@@ -193,6 +192,7 @@ export default {
       page: 1,
       errors: [],
       success: false,
+      asyncFinished: false,
       hoyoStats: {},
       hoyoPostsInit: {},
       hoyoUser: {
