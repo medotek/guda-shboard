@@ -46,6 +46,7 @@ class HoyolabStatsCommand extends Command
     {
         $taskForce = new HoyolabStatsController($this->entityManager, $this->hoyolabRequest, $this->httpClient);
         $taskForce->cronHoyoPostStats();
+        $taskForce->cronHoyoUserStats();
         return Command::SUCCESS;
     }
 }
