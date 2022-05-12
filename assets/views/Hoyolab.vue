@@ -38,7 +38,7 @@
 
     <div class="wrapper" v-if="$route.name === 'hoyolab'">
       <h3>Liste des profils hoyolab</h3>
-      <b-row class="profile-wrapper" v-if="hoyoUsers" v-for="hoyoUser in hoyoUsers">
+      <b-row class="profile-wrapper" v-if="hoyoUsers" v-for="(hoyoUser, key) in hoyoUsers" :key="key">
         <b-col sm="12" md="4" class="profile-col" @click="goToProfile(hoyoUser.uid)">
           <div class="profile-card">
             <div class="profile-image">

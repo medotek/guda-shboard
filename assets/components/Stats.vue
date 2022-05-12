@@ -7,6 +7,7 @@
     </div>
     <div class="hoyolab-stats-content">
       <LineChartGenerator
+          ref="stat"
           :chart-options="chartOptions"
           :chart-data="chartData"
           :chart-id="chartId"
@@ -18,11 +19,15 @@
           :height="height"
       />
     </div>
+    <div class="test">
+      <button @click="sample1">Change data 1</button>
+      <button @click="sample2">Change data 2</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { Line as LineChartGenerator } from 'vue-chartjs/legacy'
+import {Line as LineChartGenerator} from 'vue-chartjs/legacy'
 
 import {
   Chart as ChartJS,
@@ -45,10 +50,9 @@ ChartJS.register(
     PointElement
 )
 
-
 export default {
   name: "Stats",
-  components: { LineChartGenerator },
+  components: {LineChartGenerator},
   props: {
     chartId: {
       type: String,
@@ -72,12 +76,24 @@ export default {
     },
     styles: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     },
     plugins: {
       type: Array,
       default: () => []
+    },
+    dataStat: {
+      type: Object,
+      default: () => {}
     }
+  },
+  mounted() {
+    // TODO : Init chart with user data
+    console.log(this.dataStat)
+    // Alimenter le tableau pour les données
+    // this.chartData.datasets.push();
+    // this.chartData.labels = [];
   },
   data() {
     return {
@@ -92,13 +108,27 @@ export default {
           'July'
         ],
         datasets: [
-          {
-            // Sample : views, likes, ...
-            label: 'Data One',
-            backgroundColor: '#f87979',
-            borderColor: '#f87979',
-            data: [40, 39, 10, 40, 39, 80, 40]
-          }
+          // {
+          //   // Sample : views, likes, ...
+          //   label: 'Views',
+          //   backgroundColor: '#f87979',
+          //   borderColor: '#f87979',
+          //   data: [40, 39, 10, 40, 39, 80, 40]
+          // },
+          // {
+          //   // Sample : views, likes, ...
+          //   label: 'Likes',
+          //   backgroundColor: '#79f8d2',
+          //   borderColor: '#79f8d2',
+          //   data: [1, 2, 3, 34, 4, 7, 8]
+          // },
+          // {
+          //   // Sample : views, likes, ...
+          //   label: 'Replies',
+          //   backgroundColor: '#797ff8',
+          //   borderColor: '#797ff8',
+          //   data: [10, 4, 40, 1, 70, 41, 40]
+          // }
         ]
       },
       chartOptions: {
@@ -108,9 +138,24 @@ export default {
       title: {
         display: true,
         text: 'Hoyo Stats'
-      }
+      },
+      key: 'postStat'
     }
-  }
+  },
+  methods: {
+    sample1() {
+      // Sample : update data of charts
+      // ChartJS.getChart(this.chartId).data.datasets[0].data = [10, 2, 40, 1, 47, 44, 1]
+      // this.update()
+    },
+    sample2() {
+      // ChartJS.getChart(this.chartId).data.datasets[0].data = [40, 39, 10, 40, 39, 80, 40]
+      // this.update()
+    },
+    update() {
+      ChartJS.getChart(this.chartId).update()
+    }
+  },
 }
 </script>
 

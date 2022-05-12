@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Contract\Encryption\EncryptionManager;
+use App\Controller\EncryptionManagerController;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
