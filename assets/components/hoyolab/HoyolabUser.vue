@@ -58,7 +58,7 @@
     </div>
 
     <!-- User stats -->
-    <Stats v-if="fetchNext" :data-stat="hoyoStats"></Stats>
+<!--    <Stats v-if="fetchNext" :data-stat="hoyoStats"></Stats>-->
 
     <div class="wrapper">
       <div class="h3">Account posts</div>
