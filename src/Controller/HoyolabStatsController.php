@@ -109,18 +109,6 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
      */
     public function cronHoyoUserStats()
     {
-
-    }
-
-    /**
-     * Get hoyolab user stats
-     * @param string $scope day, days, month, months, year
-     * @return void
-     * @throws TransportExceptionInterface
-     * @throws Exception
-     */
-    public function getUserHoyoStats(string $scope)
-    {
         $allHoyoUsers = $this->entityManager->getRepository(HoyolabPostUser::class)->findAll();
         $arrayHoyoUsers = new ArrayCollection($allHoyoUsers);
 
@@ -157,5 +145,17 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
             }
         }
         $this->entityManager->flush();
+    }
+
+    /**
+     * Get hoyolab user stats
+     * @param string $scope day, days, month, months, year
+     * @return void
+     * @throws TransportExceptionInterface
+     * @throws Exception
+     */
+    public function getUserHoyoStats(string $scope)
+    {
+
     }
 }
