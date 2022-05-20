@@ -55,6 +55,12 @@ export default {
                 return res.data
             })
         },
+        async getHoyoUserAnalytics(_, data) {
+            console.log(data)
+            return await axios.get(`/hoyolab/user/${data.uid}/analytics/${data.period}`).then(res => {
+                return res.data
+            })
+        },
         async getHoyoUserPostList(_, data) {
             return await axios.get(`/hoyolab/user/${data.uid}/posts?page=${data.page}`).then(res => {
                 return res.data

@@ -21,8 +21,18 @@ services:
             - '../src/Kernel.php'
             - '../src/Tests/'
 
-    App\Contract\Request\HoyolabRequest:
+    app.contract.request.hoyolab_request:
+        class: App\Contract\Request\HoyolabRequest
         arguments:
           ['@http_client']
+
+#    App\Controller\HoyolabStatsController:
+#        arguments:
+#            - '@doctrine.orm.entity_manager'
+#            - '@app.contract.request.hoyolab_request'
+#            - '@http_client'
+#            - '@security.token_storage'
+#            - '@logger'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

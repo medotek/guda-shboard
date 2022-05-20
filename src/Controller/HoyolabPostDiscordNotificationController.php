@@ -46,7 +46,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     /**
      * @Route("/hoyolab/cron/update/all", name="first_cron")
      * @throws \Exception
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     public function discordNotificationCron(): void
     {
@@ -217,7 +217,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
      * @param $webhook
      * @param $embeds
      * @return void
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws TransportExceptionInterface
      */
     private function embedNotification($webhook, $embeds): void
     {

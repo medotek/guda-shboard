@@ -11,7 +11,8 @@
             </div>
             <span>UID : {{ hoyoUser.uid }}</span>
             <span>{{ hoyoUser.nickname }}</span>
-            <b-link class="profile-link" :href="`https://www.hoyolab.com/accountCenter/postList?id=${hoyoUser.uid}`" target="_blank"></b-link>
+            <b-link class="profile-link" :href="`https://www.hoyolab.com/accountCenter/postList?id=${hoyoUser.uid}`"
+                    target="_blank"></b-link>
           </div>
         </b-col>
         <b-col sm="12" md="6" lg="9">
@@ -114,12 +115,19 @@ export default {
       getHoyoStats: 'discord/getHoyoStats',
       getHoyoPostsList: 'discord/getHoyoUserPostList',
       getHoyoUser: 'discord/getHoyoUser',
-      setHoyolabWebhook: 'discord/setHoyolabWebhook'
+      setHoyolabWebhook: 'discord/setHoyolabWebhook',
+      getHoyoUserAnalytics: 'discord/getHoyoUserAnalytics'
     }),
     async hoyoInit() {
       this.hoyoStats = await this.getHoyoStats(this.$route.params.uid)
       this.hoyoUser = await this.getHoyoUser(this.$route.params.uid)
       this.hoyoPostsInit = await this.getHoyoPostsList({uid: this.$route.params.uid, page: 1})
+
+      // Load stats
+      let analyticsResponse = await this.getHoyoUserAnalytics({uid: this.$route.params.uid, period: 'day'});
+
+      console.log(analyticsResponse)
+
       this.fetchNext = true
       let hoyoUserData = await fetch('https://api.guda.club:3001/https://bbs-api-os.mihoyo.com/community/user/wapi/getUserFullInfo?uid=' + this.$route.params.uid, {method: 'GET'}).then(r => {
         return r.json()
@@ -194,6 +202,7 @@ export default {
       success: false,
       asyncFinished: false,
       hoyoStats: {},
+      hoyoAnalytics: [],
       hoyoPostsInit: {},
       hoyoUser: {
         nickname: "",
@@ -214,6 +223,7 @@ export default {
 <style scoped lang="scss">
 .profile-card {
   position: relative;
+
   .profile-link {
     position: absolute;
     left: 0;
@@ -227,6 +237,7 @@ export default {
 .guda-post-card {
   background-color: var(--guda-light-blue);
   margin-bottom: 1rem;
+
   .card-body {
     .card-title {
       font-size: 1rem;
@@ -247,7 +258,8 @@ export default {
 .missing-posts {
   margin-bottom: 0.675rem;
 }
-.hoyolab-user-management,.missing-posts {
+
+.hoyolab-user-management, .missing-posts {
   border-radius: 0.675rem;
   padding: 1rem;
 }

@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
@@ -65,13 +66,12 @@ class HoyolabPostsWebhookController extends AbstractController
     /**
      * Get all hoyo users for a guda user
      * @Route("/hoyolab/users",name="hoyolab_posts_users")
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws ExceptionInterface
      */
     public function getHoyolabUsers(): Response
     {
         /** @var User $user */
         $user = $this->security->getUser();
-
 
         if ($user) {
             $data = $this->serializer->normalize($user, null, ['groups' => ['user', 'hoyolab_post_user']]);
@@ -85,7 +85,7 @@ class HoyolabPostsWebhookController extends AbstractController
     /**
      * Get all hoyo users for a guda user
      * @Route("/hoyolab/user/{uid}",name="hoyolab_posts_user")
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws ExceptionInterface
      */
     public function getHoyolabUser(int $uid): Response
     {
@@ -106,7 +106,7 @@ class HoyolabPostsWebhookController extends AbstractController
     /**
      * Get all stats from the user's hoyo posts
      * @Route("/hoyolab/user/{uid}/posts",name="hoyolab_user_posts")
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws ExceptionInterface
      */
     public function getPostsListByHoyoUid(Request $request, int $uid): Response
     {
