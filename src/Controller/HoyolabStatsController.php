@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 
+use App\Builder\StatsBuilder;
 use App\Contract\Encryption\EncryptionManager;
 use App\Contract\Request\HoyolabRequest;
 use App\Contract\Stats\TaxonomyInterface;
@@ -11,6 +12,7 @@ use App\Entity\HoyolabPostUser;
 use App\Entity\HoyolabStats;
 use App\Entity\HoyolabUserStats;
 use App\Entity\User;
+use App\Helper\Stat\StatsPeriodHelper;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -135,13 +137,13 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
                     $arrResponse = $response->toArray();
                     if (isset($arrResponse['data']['user_info']['achieve'])) {
                         $stats = $arrResponse['data']['user_info']['achieve'];
-//                        $currDateTime = new \DateTime('now');
-//                        $date = strtotime($currDateTime->format('Y-m-d H:i:s'));
-//                        $currentHour = date('H', $date);
-//                        $hourFirstHalf = new \DateTime($currentHour . ':00');
-//                        $hourEndFirstHalf = new \DateTime($currentHour . ':30');
-//
-//                        if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
+                        $currDateTime = new \DateTime('now');
+                        $date = strtotime($currDateTime->format('Y-m-d H:i:s'));
+                        $currentHour = date('H', $date);
+                        $hourFirstHalf = new \DateTime($currentHour . ':00');
+                        $hourEndFirstHalf = new \DateTime($currentHour . ':30');
+
+                        if ($hourFirstHalf <= $currDateTime && $currDateTime <= $hourEndFirstHalf) {
                             $userStats = new HoyolabUserStats();
                             $userStats->setDate(new \DateTime());
                             $userStats->setLikes($stats[TaxonomyInterface::LIKES_MAPPING]);
@@ -151,7 +153,7 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
                             $userStats->setReplyposts($stats[TaxonomyInterface::POSTRELIES_MAPPING]);
                             $userStats->setUser($hoyoUser);
                             $this->entityManager->persist($userStats);
-//                        }
+                        }
                     }
                 } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
                     throw new Exception($e);
@@ -175,26 +177,26 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
 //        $user = $this->security->getUser();
 //
 //        if ($user) {
-        $day = new \DateTime('now');
-        $dateFrom = null;
-        switch ($scope) {
-            case 'day':
-                $dateFrom = $day->modify('-1 day');
-                break;
-            case 'week':
-                $dateFrom = (new \DateTime($day->format('Y-m-d')  . ' 00:00:00'))->modify('-7 day');
-                break;
-            case 'month':
-                $dateFrom = (new \DateTime($day->format('Y-m-d')  . ' 00:00:00'))->modify('-1 month');
-                break;
-            case 'year':
-                $dateFrom = (new \DateTime($day->format('Y-m-d')  . ' 00:00:00'))->modify('-1 year');
-                break;
-        }
+            $day = new \DateTime('now');
+            $dateFrom = null;
+            switch ($scope) {
+                case 'day':
+                    $dateFrom = $day->modify('-1 day');
+                    break;
+                case 'week':
+                    $dateFrom = (new \DateTime($day->format('Y-m-d') . ' 00:00:00'))->modify('-7 day');
+                    break;
+                case 'month':
+                    $dateFrom = (new \DateTime($day->format('Y-m-d') . ' 00:00:00'))->modify('-1 month');
+                    break;
+                case 'year':
+                    $dateFrom = (new \DateTime($day->format('Y-m-d') . ' 00:00:00'))->modify('-1 year');
+                    break;
+            }
 
-        if (null === $day | null === $dateFrom) {
-            return $this->json(['error' => 'An error occurred'], 500);
-        }
+            if (null === $day | null === $dateFrom) {
+                return $this->json(['error' => 'An error occurred'], 500);
+            }
 
         $dateTo = new \DateTime('now');
 
@@ -207,24 +209,24 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
             return $this->json(['error' => 'There is no existing hoyoUser id associated with the current user'], 500);
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('hus.date, hus.likes, hus.posts, hus.replyposts, hus.followed');
-        $qb->from(' App:HoyolabUserStats', 'hus');
-        $qb->where('hus.date BETWEEN :from AND :to AND hus.user = :hoyoUser');
-        $qb->setParameter('from', $dateFrom);
-        $qb->setParameter('to', $dateTo);
-        $qb->setParameter('hoyoUser', $hoyoPostUser);
-        $query = $qb->getQuery();
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->select('hus.date, hus.likes, hus.posts, hus.replyposts, hus.followed');
+            $qb->from(' App:HoyolabUserStats', 'hus');
+            $qb->where('hus.date BETWEEN :from AND :to AND hus.user = :hoyoUser');
+            $qb->setParameter('from', $dateFrom);
+            $qb->setParameter('to', $dateTo);
+            $qb->setParameter('hoyoUser', $hoyoPostUser);
+            $query = $qb->getQuery();
 
-        $results = $query->getResult();
+            $results = $query->getResult();
 
-        if (!empty($results)) {
-            return $this->json(['success' => $results]);
-        }
+            if (!empty($results)) {
+                return $this->json(['success' => StatsBuilder::prepareStats($dateFrom, $dateTo, $scope, $results)]);
+            }
 
 //        } else {
-//        $this->errors[] = 'You need ot be authenticated';
-//          }
+//            $this->errors[] = 'You need ot be authenticated';
+//        }
         return $this->json(['error' => $this->errors], 400);
     }
 }

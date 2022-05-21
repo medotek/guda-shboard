@@ -2,10 +2,14 @@
   <div class="wrapper hoyolab-stats">
     <div class="hoyolab-stats-header">
       <div class="h3">
-        Stats<span class="guda-new">NEW</span>
+        Stats<span class="guda-new">NEW</span><span class="guda-beta">BETA</span>
       </div>
     </div>
     <div class="hoyolab-stats-content">
+      <div class="period">
+        <button @click="day">Last 24 Hours</button>
+        <!--            <button @click="sample2">Change data 2</button>-->
+      </div>
       <LineChartGenerator
           ref="stat"
           :chart-options="chartOptions"
@@ -18,10 +22,6 @@
           :width="width"
           :height="height"
       />
-    </div>
-    <div class="test">
-      <button @click="sample1">Change data 1</button>
-      <button @click="sample2">Change data 2</button>
     </div>
   </div>
 </template>
@@ -85,12 +85,28 @@ export default {
     },
     dataStat: {
       type: Object,
-      default: () => {}
+      default: () => {
+      }
     }
   },
   mounted() {
     // TODO : Init chart with user data
-    console.log(this.dataStat)
+    let datasets = this.dataStat.datasets
+    let labels = this.dataStat.labels
+    if (this.dataStat.datasets) {
+      if (Array.isArray(datasets)) {
+        ChartJS.getChart(this.chartId).data.datasets = []
+        datasets.forEach(dataset => {
+          ChartJS.getChart(this.chartId).data.datasets.push(dataset);
+        })
+      }
+
+      if (labels) {
+        if (Array.isArray(labels))
+          ChartJS.getChart(this.chartId).data.labels = labels;
+      }
+    }
+    ChartJS.getChart(this.chartId).update()
     // Alimenter le tableau pour les données
     // this.chartData.datasets.push();
     // this.chartData.labels = [];
@@ -99,36 +115,10 @@ export default {
     return {
       chartData: {
         labels: [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July'
+          ''
         ],
         datasets: [
-          // {
-          //   // Sample : views, likes, ...
-          //   label: 'Views',
-          //   backgroundColor: '#f87979',
-          //   borderColor: '#f87979',
-          //   data: [40, 39, 10, 40, 39, 80, 40]
-          // },
-          // {
-          //   // Sample : views, likes, ...
-          //   label: 'Likes',
-          //   backgroundColor: '#79f8d2',
-          //   borderColor: '#79f8d2',
-          //   data: [1, 2, 3, 34, 4, 7, 8]
-          // },
-          // {
-          //   // Sample : views, likes, ...
-          //   label: 'Replies',
-          //   backgroundColor: '#797ff8',
-          //   borderColor: '#797ff8',
-          //   data: [10, 4, 40, 1, 70, 41, 40]
-          // }
+          {}
         ]
       },
       chartOptions: {
@@ -143,14 +133,14 @@ export default {
     }
   },
   methods: {
-    sample1() {
+    day() {
       // Sample : update data of charts
       // ChartJS.getChart(this.chartId).data.datasets[0].data = [10, 2, 40, 1, 47, 44, 1]
       // this.update()
     },
     sample2() {
       // ChartJS.getChart(this.chartId).data.datasets[0].data = [40, 39, 10, 40, 39, 80, 40]
-      // this.update()
+      this.update()
     },
     update() {
       ChartJS.getChart(this.chartId).update()
@@ -173,6 +163,24 @@ export default {
         top: 0;
         left: 90%;
         z-index: 0;
+      }
+      .guda-beta {
+        position: absolute;
+        top: 0;
+        left: 140%;
+        z-index: 0;
+      }
+    }
+  }
+
+  .hoyolab-stats-content {
+    .period {
+      text-align: center;
+
+      button {
+        border-radius: 5px;
+        background-color: #FF7A59FF;
+        color: white;
       }
     }
   }

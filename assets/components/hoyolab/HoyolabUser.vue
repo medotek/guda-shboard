@@ -59,7 +59,7 @@
     </div>
 
     <!-- User stats -->
-    <Stats v-if="fetchNext" :data-stat="hoyoStats"></Stats>
+    <Stats v-if="fetchNext && statsReady && hoyoUserStats" :data-stat="hoyoUserStats"></Stats>
 
     <div class="wrapper">
       <div class="h3">Account posts</div>
@@ -125,8 +125,71 @@ export default {
 
       // Load stats
       let analyticsResponse = await this.getHoyoUserAnalytics({uid: this.$route.params.uid, period: 'day'});
+      if (analyticsResponse.success !== undefined) {
+        let labels = [];
+        let datasets = [];
+        if (Object.keys(analyticsResponse.success).length) {
+          // this.$route.query.test environment var
+          this.statsReady = !!this.$route.query.test;
+          // prepare data for stats
+          for (const [key, stat] of Object.entries(analyticsResponse.success)) {
+            // init first dataSet
+            if (Object.keys(stat).length) {
+              if (!datasets.length) {
+                let customColors = [
+                  '#797ff8',
+                  '#79f8bf',
+                  '#ff7676',
+                  '#f8d079',
+                  '#f079f8',
+                ]
+                let i = 0;
 
-      console.log(analyticsResponse)
+                for (const [statKey, statValue] of Object.entries(stat)) {
+                  let datasetSample = {
+                    label: statKey,
+                    backgroundColor: customColors[i],
+                    borderColor: customColors[i],
+                    data: []
+                  }
+
+                  datasets.push(datasetSample)
+                  i++
+                }
+              }
+            }
+
+            labels.push(key)
+          }
+
+          for (const [key, stat] of Object.entries(analyticsResponse.success)) {
+            if (Object.keys(stat).length) {
+              // construct data for datasets
+              for (const [statKey, statValue] of Object.entries(stat)) {
+                // find datasetSample and push data
+                let datasetKey = this.getObjKey(datasets, statKey)
+                if (datasetKey) {
+                  datasets[datasetKey].data.push(statValue)
+                }
+              }
+            } else {
+              for (const [datasetKey, dataset] of Object.entries(datasets)) {
+                dataset.data.push(0)
+              }
+            }
+          }
+        }
+
+        console.log(datasets)
+        console.log(labels)
+
+        if (datasets.length) {
+          this.hoyoUserStats = {
+            labels,
+            datasets
+          }
+        }
+      }
 
       this.fetchNext = true
       let hoyoUserData = await fetch('https://api.guda.club:3001/https://bbs-api-os.mihoyo.com/community/user/wapi/getUserFullInfo?uid=' + this.$route.params.uid, {method: 'GET'}).then(r => {
@@ -161,6 +224,18 @@ export default {
     getCreationDate(hoyoPost) {
       let date = this.$options.filters.formatDate(hoyoPost.postCreationDate)
       return date.replace(':', 'h')
+    },
+    getObjKey(obj, value) {
+      for (const [objKey, objValue] of Object.entries(obj)) {
+        if (Object.keys(objValue).length) {
+          let target = Object.keys(objValue).find(key => objValue[key] === value)
+          if (target) {
+            return objKey
+          }
+        }
+      }
+
+      return false;
     },
     getNextPosts() {
       window.onscroll = () => {
@@ -197,12 +272,13 @@ export default {
       fetchNext: false,
       noMoreData: false,
       gudaLoading: false,
+      statsReady: false,
       page: 1,
       errors: [],
       success: false,
       asyncFinished: false,
       hoyoStats: {},
-      hoyoAnalytics: [],
+      hoyoUserStats: {},
       hoyoPostsInit: {},
       hoyoUser: {
         nickname: "",

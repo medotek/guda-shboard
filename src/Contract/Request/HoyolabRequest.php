@@ -14,6 +14,13 @@ class HoyolabRequest
 {
     private HttpClientInterface $client;
 
+    public const HEADERS = [
+        'headers' => [
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ],
+    ];
+
     public function __construct(
         HttpClientInterface $client
     )
@@ -49,10 +56,7 @@ class HoyolabRequest
     public function sendDiscordEmbed($webhook, $send): ResponseInterface
     {
         return $this->client->request('POST', $webhook . '?wait=true', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
+            self::HEADERS,
             'body' => json_encode($send)
         ]);
     }
@@ -66,12 +70,7 @@ class HoyolabRequest
     {
         return $this->client->request("GET",
             "https://bbs-api-os.hoyolab.com/community/painter/wapi/user/full?uid={$uid}",
-            [
-                'headers' => [
-                    'Content-Type: application/json',
-                    'Accept: application/json',
-                ],
-            ]
+            self::HEADERS
         );
     }
 }
