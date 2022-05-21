@@ -129,8 +129,7 @@ export default {
         let labels = [];
         let datasets = [];
         if (Object.keys(analyticsResponse.success).length) {
-          // this.$route.query.test environment var
-          this.statsReady = !!this.$route.query.test;
+          this.statsReady = true;
           // prepare data for stats
           for (const [key, stat] of Object.entries(analyticsResponse.success)) {
             // init first dataSet
@@ -159,7 +158,7 @@ export default {
               }
             }
 
-            labels.push(key)
+            labels.push(key.split(' ')[1])
           }
 
           for (const [key, stat] of Object.entries(analyticsResponse.success)) {
@@ -180,8 +179,19 @@ export default {
           }
         }
 
-        console.log(datasets)
-        console.log(labels)
+        // unset value and label if empty value
+        for (const [datasetKey, dataset] of Object.entries(datasets)) {
+          if (dataset.data.length) {
+            dataset.data.forEach((val, k) => {
+              if (!val) {
+                // remove key for datasets
+                datasets[datasetKey].data.splice(k, 1)
+                // same for labels
+                labels.splice(k, 1)
+              }
+            })
+          }
+        }
 
         if (datasets.length) {
           this.hoyoUserStats = {

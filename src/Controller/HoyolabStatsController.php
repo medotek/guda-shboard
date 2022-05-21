@@ -173,10 +173,10 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
      */
     public function getUserHoyoStats(string $scope, int $uid): JsonResponse
     {
-//        /** @var User $user */
-//        $user = $this->security->getUser();
-//
-//        if ($user) {
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        if ($user) {
             $day = new \DateTime('now');
             $dateFrom = null;
             switch ($scope) {
@@ -201,8 +201,8 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
         $dateTo = new \DateTime('now');
 
         // Test
-        $userRepository = $this->entityManager->getRepository(User::class);
-        $user = $userRepository->find(29);
+//        $userRepository = $this->entityManager->getRepository(User::class);
+//        $user = $userRepository->find(29);
 
         $hoyoPostUserRepository = $this->entityManager->getRepository(HoyolabPostUser::class);
         if (!$hoyoPostUser = $hoyoPostUserRepository->findOneBy(['user' => $user, 'uid' => $uid])) {
@@ -224,9 +224,9 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
                 return $this->json(['success' => StatsBuilder::prepareStats($dateFrom, $dateTo, $scope, $results)]);
             }
 
-//        } else {
-//            $this->errors[] = 'You need ot be authenticated';
-//        }
+        } else {
+            $this->errors[] = 'You need ot be authenticated';
+        }
         return $this->json(['error' => $this->errors], 400);
     }
 }

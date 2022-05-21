@@ -48,6 +48,8 @@ class StatsBuilder
 
         $newStats = [];
         // Calcul avg
+        $i = 0;
+        $previousKey = '';
         foreach ($statsKeys as $key => $stats) {
             if (count($stats) == 1) {
                 unset($stats[0]['date']);
@@ -67,12 +69,30 @@ class StatsBuilder
                 foreach ($avgStatKeys as $avgStatKey) {
                     $avgStat[$key][$avgStatKey] = array_sum($avgStat[$key][$avgStatKey]) / count($avgStat[$key][$avgStatKey]);
                 }
+                //
                 $newStats[$key] = $avgStat[$key];
             } else {
                 $newStats[$key] = '';
             }
+
+            $previousKey = $key;
+            $i++;
         }
 
         return $newStats;
+    }
+
+    // TODO : substract the last value to the curr one, but may be do it in front (vue)
+    // TODO : gestion de plusieurs affichages par stat + 'all' pour l'affichage basic, peut pas nécessaire de soustraire
+    // TODO : peut etre ajouter une section pour les stats sans courbe. ex : + 55 followers
+    // TODO : juste au dessus de la chart
+    private function recursiveStatsTreament(array $lastStat, array $currStat) {
+        if (empty(array_diff_key($currStat, $lastStat))) {
+
+            foreach ($currStat as $key => $item) {
+//                $currStat[$key] = $item
+            }
+        }
+        return false;
     }
 }
