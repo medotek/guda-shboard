@@ -6,6 +6,7 @@ use App\Contract\Request\HoyolabRequest;
 use App\Controller\HoyolabPostDiscordNotificationController;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -17,12 +18,14 @@ class HoyoPostsNotificationCommand extends Command
     private EntityManagerInterface $entityManager;
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
     private HoyolabRequest $hoyolabRequest;
+    private LoggerInterface $logger;
 
     public function __construct(
         string $name = null,
         EntityManagerInterface $entityManager,
         HoyolabPostUserRepository $hoyolabPostUserRepository,
-        HoyolabRequest $hoyolabRequest
+        HoyolabRequest $hoyolabRequest,
+        LoggerInterface $logger
     )
     {
         parent::__construct($name);
@@ -30,6 +33,7 @@ class HoyoPostsNotificationCommand extends Command
         $this->entityManager = $entityManager;
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->hoyolabRequest = $hoyolabRequest;
+        $this->logger = $logger;
     }
 
     protected function configure(): void
@@ -43,7 +47,7 @@ class HoyoPostsNotificationCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $taskForce = new HoyolabPostDiscordNotificationController( $this->hoyolabPostUserRepository, $this->entityManager, $this->hoyolabRequest);
+        $taskForce = new HoyolabPostDiscordNotificationController($this->hoyolabPostUserRepository, $this->entityManager, $this->hoyolabRequest, $this->logger);
         $taskForce->discordNotificationCron();
         return Command::SUCCESS;
     }

@@ -21,10 +21,10 @@ services:
             - '../src/Kernel.php'
             - '../src/Tests/'
 
-    app.contract.request.hoyolab_request:
-        class: App\Contract\Request\HoyolabRequest
+    App\Contract\Request\HoyolabRequest:
         arguments:
-          ['@http_client']
+          - '@http_client'
+          - '@logger'
 
 #    App\Controller\HoyolabStatsController:
 #        arguments:

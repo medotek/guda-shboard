@@ -2,6 +2,7 @@
 
 namespace App\Contract\Request;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -13,19 +14,16 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class HoyolabRequest
 {
     private HttpClientInterface $client;
+    private LoggerInterface $logger;
 
-    public const HEADERS = [
-        'headers' => [
-            'Content-Type: application/json',
-            'Accept: application/json',
-        ],
-    ];
 
     public function __construct(
-        HttpClientInterface $client
+        HttpClientInterface $client,
+        LoggerInterface $logger
     )
     {
         $this->client = $client;
+        $this->logger = $logger;
     }
 
     /**
@@ -43,8 +41,7 @@ class HoyolabRequest
             try {
                 return $response->toArray();
             } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
-                // TODO : logger
-                dump($e);
+                $this->logger->critical('[ERROR] Couldn\'t retrieve data from endpoint (https://bbs-api-os.hoyolab.com/community/post/wapi/getPostFull?gids=2&post_id=' . $id . '&read=1) error : ' . $e);
             }
         }
         return ['error' => []];
@@ -56,7 +53,10 @@ class HoyolabRequest
     public function sendDiscordEmbed($webhook, $send): ResponseInterface
     {
         return $this->client->request('POST', $webhook . '?wait=true', [
-            self::HEADERS,
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
             'body' => json_encode($send)
         ]);
     }
@@ -70,7 +70,12 @@ class HoyolabRequest
     {
         return $this->client->request("GET",
             "https://bbs-api-os.hoyolab.com/community/painter/wapi/user/full?uid={$uid}",
-            self::HEADERS
+            [
+                'headers' => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                ],
+            ]
         );
     }
 }

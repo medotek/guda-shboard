@@ -16,6 +16,7 @@ use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostUserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,16 +32,19 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
     private EntityManagerInterface $entityManager;
     private HoyolabRequest $hoyolabRequest;
+    private LoggerInterface $logger;
 
     public function __construct(
         HoyolabPostUserRepository   $hoyolabPostUserRepository,
         EntityManagerInterface      $entityManager,
-        HoyolabRequest $hoyolabRequest
+        HoyolabRequest $hoyolabRequest,
+        LoggerInterface  $logger
     )
     {
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->entityManager = $entityManager;
         $this->hoyolabRequest = $hoyolabRequest;
+        $this->logger = $logger;
     }
 
     /**
@@ -55,6 +59,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
 
         /** @var HoyolabPostUser $hoyoUser */
         foreach ($arrayHoyoUsers->toArray() as $hoyoUser) {
+            $this->logger->info('[INFO] Start discord notification process for user : ' .$hoyoUser->getUid());
             // If there is no webhook setup, skip the current iteration
             if (!$hoyoUser->getWebhookUrl()) {
                 continue;
@@ -74,6 +79,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
             /** @var HoyolabPost $hoyoPost */
             foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
+                $this->logger->info('[INFO] Hoyolab Post Treatment : ' . $hoyoPost->getPostId());
 
                 $newStats = $hoyoPost->getHoyolabPostStats();
                 $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
@@ -92,6 +98,8 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     if ((int)$statsData[TaxonomyInterface::REPLIES_MAPPING] === $newStats->getReply()) {
                         continue;
                     }
+
+                    $this->logger->info('[INFO] Hoyolab Post : ' . $hoyoPost->getPostId() . ' | NEW MESSAGES');
 
                     $oldStats = [
                         TaxonomyInterface::LIKES_MAPPING => $newStats->getLikes(),
@@ -244,10 +252,10 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                     continue;
                 } catch (ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
                     // TODO : logger
-                    dump($e);
+                    $this->logger->error('[ERROR] Embed message couldn\' be sent | error trace :  ' . $e);
                 }
             } else {
-                dump('error');
+                $this->logger->error('[ERROR] Discord endpoint response status :  ' . $response->getStatusCode());
             }
         }
     }
