@@ -125,6 +125,7 @@ export default {
 
       // Load stats
       let analyticsResponse = await this.getHoyoUserAnalytics({uid: this.$route.params.uid, period: 'day'});
+      console.log(analyticsResponse.success)
       if (analyticsResponse.success !== undefined) {
         let labels = [];
         let datasets = [];
@@ -179,18 +180,39 @@ export default {
           }
         }
 
+        // TODO : instead of unsetting values - fill the empty ones with the value setup before, if no value exists before, unset
         // unset value and label if empty value
+        let labelKeysToRemove = []
+        let iteration = 0;
         for (const [datasetKey, dataset] of Object.entries(datasets)) {
           if (dataset.data.length) {
+            let previousVal = 0;
             dataset.data.forEach((val, k) => {
               if (!val) {
-                // remove key for datasets
-                datasets[datasetKey].data.splice(k, 1)
-                // same for labels
-                labels.splice(k, 1)
+                if (!previousVal) {
+                  if (!iteration) {
+                    labelKeysToRemove.push(k)
+                  }
+                  // remove key for datasets
+                  datasets[datasetKey].data.splice(k, 1)
+                } else {
+                  datasets[datasetKey].data[k] = previousVal
+                }
+
+              } else {
+                previousVal = val
               }
             })
+            iteration++;
           }
+        }
+        console.log(labelKeysToRemove)
+        // unset label key
+        if (labelKeysToRemove.length) {
+          labelKeysToRemove.forEach(labelkey => {
+            // same for labels
+            labels.splice(labelkey, 1)
+          })
         }
 
         if (datasets.length) {
@@ -200,6 +222,7 @@ export default {
           }
         }
       }
+      // END - TODO
 
       this.fetchNext = true
       let hoyoUserData = await fetch('https://api.guda.club:3001/https://bbs-api-os.mihoyo.com/community/user/wapi/getUserFullInfo?uid=' + this.$route.params.uid, {method: 'GET'}).then(r => {
