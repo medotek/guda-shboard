@@ -180,8 +180,7 @@ export default {
           }
         }
 
-        // TODO : instead of unsetting values - fill the empty ones with the value setup before, if no value exists before, unset
-        // unset value and label if empty value
+        // instead of unsetting values - fill the empty ones with the value setup before, if no value exists before, unset
         let labelKeysToRemove = []
         let iteration = 0;
         for (const [datasetKey, dataset] of Object.entries(datasets)) {
@@ -222,7 +221,6 @@ export default {
           }
         }
       }
-      // END - TODO
 
       this.fetchNext = true
       let hoyoUserData = await fetch('https://api.guda.club:3001/https://bbs-api-os.mihoyo.com/community/user/wapi/getUserFullInfo?uid=' + this.$route.params.uid, {method: 'GET'}).then(r => {

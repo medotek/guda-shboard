@@ -181,7 +181,7 @@ class HoyolabStatsController extends AbstractController implements TaxonomyInter
             $dateFrom = null;
             switch ($scope) {
                 case 'day':
-                    $dateFrom = $day->modify('-1 day');
+                    $dateFrom = $day->modify('-1 day')->modify('-30 min');
                     break;
                 case 'week':
                     $dateFrom = (new \DateTime($day->format('Y-m-d') . ' 00:00:00'))->modify('-7 day');

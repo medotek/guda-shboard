@@ -35,10 +35,10 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     private LoggerInterface $logger;
 
     public function __construct(
-        HoyolabPostUserRepository   $hoyolabPostUserRepository,
-        EntityManagerInterface      $entityManager,
-        HoyolabRequest $hoyolabRequest,
-        LoggerInterface  $logger
+        HoyolabPostUserRepository $hoyolabPostUserRepository,
+        EntityManagerInterface    $entityManager,
+        HoyolabRequest            $hoyolabRequest,
+        LoggerInterface           $logger
     )
     {
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
@@ -48,127 +48,127 @@ class HoyolabPostDiscordNotificationController extends AbstractController
     }
 
     /**
-     * @Route("/hoyolab/cron/update/all", name="first_cron")
      * @throws \Exception
      * @throws TransportExceptionInterface
      */
-    public function discordNotificationCron(): void
+    public function discordNotificationCron(int $hoyoUserId): void
     {
-        $allHoyoUsers = $this->hoyolabPostUserRepository->findAll();
-        $arrayHoyoUsers = new ArrayCollection($allHoyoUsers);
+        if (!$hoyoUserId) {
+            return;
+        }
 
         /** @var HoyolabPostUser $hoyoUser */
-        foreach ($arrayHoyoUsers->toArray() as $hoyoUser) {
-            $this->logger->info('[INFO] Start discord notification process for user : ' .$hoyoUser->getUid());
-            // If there is no webhook setup, skip the current iteration
-            if (!$hoyoUser->getWebhookUrl()) {
-                continue;
-            }
+        $hoyoUser = $this->hoyolabPostUserRepository->find($hoyoUserId);
 
-            // Get user key to decrypt the webhookUrl
-            $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
-            $webhookUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $userKey);
+        if (!$hoyoUser) {
+            return;
+        }
 
-            // Hoyo Posts
-            $postEmbedData = [];
-            // No posts
-            if (empty($hoyoUser->getHoyolabPosts()->toArray())) {
-                continue;
-            }
+        $this->logger->info('[INFO] Start discord notification process for user : ' . $hoyoUser->getUid());
+        // If there is no webhook setup, skip the current iteration
+        if (!$hoyoUser->getWebhookUrl() || empty($hoyoUser->getHoyolabPosts()->toArray())) {
+            return;
+        }
 
-            $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
-            /** @var HoyolabPost $hoyoPost */
-            foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
-                $this->logger->info('[INFO] Hoyolab Post Treatment : ' . $hoyoPost->getPostId());
+        // Get user key to decrypt the webhookUrl
+        $userKey = $hoyoUser->getUser()->getCreationDate()->getTimestamp();
+        $webhookUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $userKey);
 
-                $newStats = $hoyoPost->getHoyolabPostStats();
-                $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
-                $post = $this->hoyolabRequest->updateHoyolabPost($hoyoPost->getPostId());
+        // Hoyo Posts
+        $postEmbedData = [];
 
-                $oldStats = [];
-                $statsData = [];
-                // Update the hoyo post here
-                if (array_key_exists('post', $post['data'])) {
-                    $postData = $post['data']['post']['post'];
-                    $statsData = $post['data']['post']['stat'];
+        $arrayHoyoPosts = new ArrayCollection($hoyoUser->getHoyolabPosts()->toArray());
+        /** @var HoyolabPost $hoyoPost */
+        foreach ($arrayHoyoPosts->toArray() as $hoyoPost) {
+            $this->logger->info('[INFO] Hoyolab Post Treatment : ' . $hoyoPost->getPostId());
+
+            $newStats = $hoyoPost->getHoyolabPostStats();
+            $discordNotification = $hoyoPost->getHoyolabPostDiscordNotification();
+            $post = $this->hoyolabRequest->updateHoyolabPost($hoyoPost->getPostId());
+
+            $oldStats = [];
+            $statsData = [];
+            // Update the hoyo post here
+            if (array_key_exists('post', $post['data'])) {
+                $postData = $post['data']['post']['post'];
+                $statsData = $post['data']['post']['stat'];
 
 //                    $this->saveHoyolabStats($hoyoPost, $statsData);
 
-                    // Don't update if there is no new replies
-                    if ((int)$statsData[TaxonomyInterface::REPLIES_MAPPING] === $newStats->getReply()) {
-                        continue;
-                    }
-
-                    $this->logger->info('[INFO] Hoyolab Post : ' . $hoyoPost->getPostId() . ' | NEW MESSAGES');
-
-                    $oldStats = [
-                        TaxonomyInterface::LIKES_MAPPING => $newStats->getLikes(),
-                        TaxonomyInterface::VIEWS_MAPPING => $newStats->getView(),
-                        TaxonomyInterface::BOOKMARKS_MAPPING => $newStats->getBookmark(),
-                        TaxonomyInterface::SHARES_MAPPING => $newStats->getShare(),
-                        TaxonomyInterface::REPLIES_MAPPING => $newStats->getReply()
-                    ];
-
-                    // Hoyolab Post Stats
-                    $newStats->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
-                    $newStats->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
-                    $newStats->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
-                    $newStats->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
-                    $newStats->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
-
-                    if ($postData['reply_time'])
-                        $hoyoPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
-                    $hoyoPost->setSubject($postData['subject']);
-
-                    $this->entityManager->persist($hoyoPost);
-                    // Only persist the new stats
-                    $this->entityManager->persist($newStats);
+                // Don't update if there is no new replies
+                if ((int)$statsData[TaxonomyInterface::REPLIES_MAPPING] === $newStats->getReply()) {
+                    continue;
                 }
 
+                $this->logger->info('[INFO] Hoyolab Post : ' . $hoyoPost->getPostId() . ' | NEW MESSAGES');
 
-                // TODO refacto
-                $diffView = (int)$statsData[TaxonomyInterface::VIEWS_MAPPING] - $oldStats[TaxonomyInterface::VIEWS_MAPPING];
-                $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
-
-                $diffBookmark = (int)$statsData[TaxonomyInterface::BOOKMARKS_MAPPING] - $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING];
-                $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
-
-                $diffLike = (int)$statsData[TaxonomyInterface::LIKES_MAPPING] - $oldStats[TaxonomyInterface::LIKES_MAPPING];
-                $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
-
-                $diffShare = (int)$statsData[TaxonomyInterface::SHARES_MAPPING] - $oldStats[TaxonomyInterface::SHARES_MAPPING];
-                $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
-
-                $diffReply = (int)$statsData[TaxonomyInterface::REPLIES_MAPPING] - $oldStats[TaxonomyInterface::REPLIES_MAPPING];
-                $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
-
-                // Compare cron stats with updated stats
-                $statistics = [
-                    'view' => $oldStats[TaxonomyInterface::VIEWS_MAPPING] . $diffView,
-                    'bookmark' => $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING] . $diffBookmark,
-                    'like' => $oldStats[TaxonomyInterface::LIKES_MAPPING] . $diffLike,
-                    'share' => $oldStats[TaxonomyInterface::SHARES_MAPPING] . $diffShare,
-                    'reply' => $oldStats[TaxonomyInterface::REPLIES_MAPPING] . $diffReply,
+                $oldStats = [
+                    TaxonomyInterface::LIKES_MAPPING => $newStats->getLikes(),
+                    TaxonomyInterface::VIEWS_MAPPING => $newStats->getView(),
+                    TaxonomyInterface::BOOKMARKS_MAPPING => $newStats->getBookmark(),
+                    TaxonomyInterface::SHARES_MAPPING => $newStats->getShare(),
+                    TaxonomyInterface::REPLIES_MAPPING => $newStats->getReply()
                 ];
 
-                // Prepare embed data
-                $postEmbedData[] = [
-                    'postId' => $hoyoPost->getPostId(),
-                    'news' => $newStats->getReply() - $oldStats[TaxonomyInterface::REPLIES_MAPPING],
-                    'subject' => $hoyoPost->getSubject(),
-                    'stats' => $statistics,
-                    'postCreationDate' => $hoyoPost->getPostCreationDate(),
-                    'hoyoUserImage' => $hoyoPost->getImage()
-                ];
+                // Hoyolab Post Stats
+                $newStats->setView($statsData[TaxonomyInterface::VIEWS_MAPPING]);
+                $newStats->setLikes($statsData[TaxonomyInterface::LIKES_MAPPING]);
+                $newStats->setReply($statsData[TaxonomyInterface::REPLIES_MAPPING]);
+                $newStats->setShare($statsData[TaxonomyInterface::SHARES_MAPPING]);
+                $newStats->setBookmark($statsData[TaxonomyInterface::BOOKMARKS_MAPPING]);
 
-                // If the post never has a notification message on discord, then create one!
-                if (!$discordNotification) {
-                    $discordNotification = new HoyolabPostDiscordNotification();
-                    $discordNotification->setHoyolabPost($hoyoPost);
-                }
-                $discordNotification->setProcessDate(new \DateTime());
-                $this->entityManager->persist($discordNotification);
+                if ($postData['reply_time'])
+                    $hoyoPost->setLastReplyTime((new \DateTime($postData['reply_time'])));
+                $hoyoPost->setSubject($postData['subject']);
+
+                $this->entityManager->persist($hoyoPost);
+                // Only persist the new stats
+                $this->entityManager->persist($newStats);
             }
+
+
+            // TODO refacto
+            $diffView = (int)$statsData[TaxonomyInterface::VIEWS_MAPPING] - $oldStats[TaxonomyInterface::VIEWS_MAPPING];
+            $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
+
+            $diffBookmark = (int)$statsData[TaxonomyInterface::BOOKMARKS_MAPPING] - $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING];
+            $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
+
+            $diffLike = (int)$statsData[TaxonomyInterface::LIKES_MAPPING] - $oldStats[TaxonomyInterface::LIKES_MAPPING];
+            $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
+
+            $diffShare = (int)$statsData[TaxonomyInterface::SHARES_MAPPING] - $oldStats[TaxonomyInterface::SHARES_MAPPING];
+            $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
+
+            $diffReply = (int)$statsData[TaxonomyInterface::REPLIES_MAPPING] - $oldStats[TaxonomyInterface::REPLIES_MAPPING];
+            $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
+
+            // Compare cron stats with updated stats
+            $statistics = [
+                'view' => $oldStats[TaxonomyInterface::VIEWS_MAPPING] . $diffView,
+                'bookmark' => $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING] . $diffBookmark,
+                'like' => $oldStats[TaxonomyInterface::LIKES_MAPPING] . $diffLike,
+                'share' => $oldStats[TaxonomyInterface::SHARES_MAPPING] . $diffShare,
+                'reply' => $oldStats[TaxonomyInterface::REPLIES_MAPPING] . $diffReply,
+            ];
+
+            // Prepare embed data
+            $postEmbedData[] = [
+                'postId' => $hoyoPost->getPostId(),
+                'news' => $newStats->getReply() - $oldStats[TaxonomyInterface::REPLIES_MAPPING],
+                'subject' => $hoyoPost->getSubject(),
+                'stats' => $statistics,
+                'postCreationDate' => $hoyoPost->getPostCreationDate(),
+                'hoyoUserImage' => $hoyoPost->getImage()
+            ];
+
+            // If the post never has a notification message on discord, then create one!
+            if (!$discordNotification) {
+                $discordNotification = new HoyolabPostDiscordNotification();
+                $discordNotification->setHoyolabPost($hoyoPost);
+            }
+            $discordNotification->setProcessDate(new \DateTime());
+            $this->entityManager->persist($discordNotification);
 
             // Treat discord notification
             $this->embedNotification($webhookUrl, $postEmbedData);
