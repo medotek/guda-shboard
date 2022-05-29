@@ -108,7 +108,7 @@ class HoyolabPostsWebhookController extends AbstractController
      * @Route("/hoyolab/user/{uid}/posts",name="hoyolab_user_posts")
      * @throws ExceptionInterface
      */
-    public function getPostsListByHoyoUid(Request $request, int $uid): Response
+    public function getPostsListByHoyoUid(Request $request, string $uid): Response
     {
         $page = (int)$request->query->get('page', 1);
 
@@ -127,7 +127,7 @@ class HoyolabPostsWebhookController extends AbstractController
                     ";
 
             $query = $this->entityManager->createQuery($dql)
-                ->setParameter(':uid', $uid)
+                ->setParameter(':uid', (int) $uid)
                 ->setParameter(':user', $user->getId());
 
             $paginator = new Paginator($query, true);
