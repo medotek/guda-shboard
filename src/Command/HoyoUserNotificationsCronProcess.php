@@ -52,6 +52,10 @@ class HoyoUserNotificationsCronProcess extends Command
 
             // TODO : Si on wait, ça marche ... Mais ce n'est pas le but
 
+            if ($process->waitUntil(function ($input, $output) {
+                dump($output);
+            }))
+
             if (!$process->isRunning()) {
                 $errors[] = $process->getExitCode();
             }
