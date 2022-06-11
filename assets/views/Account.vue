@@ -3,7 +3,7 @@
     <h1>Mon compte</h1>
     <div class="guda-errors" v-if="discordAuthError">Une erreur est survenue lors de la liaison avec discord</div>
     <a class="discord" v-if="!isLinkedSuccessfully && displayAfterPageLoad"
-       href="https://discord.com/api/oauth2/authorize?client_id=899946579639799808&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fdiscord%2Fauth&response_type=code&scope=identify%20guilds">Discord</a>
+       href="https://discord.com/api/oauth2/authorize?client_id=899946579639799808&permissions=8&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fdiscord%2Fauth&response_type=code&scope=identify%20guilds%20applications.commands%20messages.read%20bot">Discord</a>
     <button v-if="isLinkedSuccessfully && displayAfterPageLoad" @click="discordRevoke()">Dissocier le compte discord</button>
     <div class="discord-account">
       <h2 v-if="username()">{{ username() }}</h2>

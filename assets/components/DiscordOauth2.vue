@@ -34,7 +34,8 @@ export default {
         try {
           // Get credentials
           const linkDiscord = await axios.post('http://localhost:3333/api/auth/discord/redirect?code='+code)
-          const {accessToken, refreshToken} = linkDiscord.data;
+          console.log(linkDiscord.data)
+          const {accessToken, refreshToken} = linkDiscord.data.data;
           // Save in db
           if (!store.getters['auth/getDiscordUser']) {
             const discordLogin = await this.discordLogin({
