@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="eff5a049-0ad6-4a49-a352-85c8af7db7ec" name="PROD" url="http://gazette.guda.club">
+        <fileTransfer rootFolder="/var/www/guda-shboard" accessType="SFTP" host="guda.club" port="22" sshConfigId="2f96566f-c617-4c64-a45f-fa2d13dddbd4" sshConfig="root@guda.club:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
