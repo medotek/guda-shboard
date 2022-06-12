@@ -1,6 +1,29 @@
 import store from './app'
 import axios from 'axios'
 
+const getDiscordUserInfo = async (accessToken) => {
+    let response = null;
+    try {
+        response = await axios.get(
+            'https://discord.com/api/v8/users/@me',
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        return {
+            status: response.status,
+            data: response.data
+        }
+    } catch (e) {
+        return {
+            status: 'error'
+        }
+    }
+
+}
 export default {
     namespaced: true,
     state: {
@@ -48,9 +71,10 @@ export default {
         },
         async discordLogin({dispatch}, data) {
             if (store.getters['auth/isAuthenticated']) {
+                // TODO : Set discord user session
                 let response = await axios.post('/discord/register', data).catch((e) => {
-                        console.log(e);
-                    })
+                    console.log(e);
+                })
                 return dispatch('attempt', 'discord')
             } else {
                 return next({
@@ -71,29 +95,27 @@ export default {
             try {
                 let response = await axios.get('/profile')
                 user = JSON.parse(response.data)
+                // Get discord info only if accessToken exists
                 commit('setUser', user)
             } catch (e) {
                 commit('setUser', null)
                 commit('setToken', null)
             }
 
-            if (user && token === 'discord') {
-                // Commit Discord User - Session
+            let userDiscordData = null;
+            if (user) {
                 try {
-                    let response = await axios.get(
-                        'https://discord.com/api/v8/users/@me',
-                        {
-                            headers: {
-                                'Authorization': `Bearer ${user.discordCredentials.accessToken}`
-                            }
+                    if (user.discordCredentials.accessToken) {
+                        let discordUserInfo = await getDiscordUserInfo(user.discordCredentials.accessToken)
+                        if (discordUserInfo.status === 200) {
+                            userDiscordData = discordUserInfo.data
                         }
-                    );
-                    commit('setDiscordUser', response.data)
+                    }
                 } catch (e) {
-                    commit('setDiscordUser', null)
                     console.log(e)
                 }
             }
+            commit('setDiscordUser', userDiscordData)
 
             store.commit('setLoading', false)
         },
@@ -123,10 +145,13 @@ export default {
             store.commit('setLoading', false)
         },
         async revoke({commit}, token) {
-            return await axios.post('http://localhost:3333/api/auth/discord/revoke?access_token='+token).then((res) => {
+            console.log(token)
+            return await axios.get('http://localhost:3333/api/auth/discord/revoke?access_token=' + token).then((res) => {
                 commit('setDiscordUser', null)
                 return res
-            }).catch(e => {console.log(e)})
+            }).catch(e => {
+                console.log(e)
+            })
         }
     }
 }
