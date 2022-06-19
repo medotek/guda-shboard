@@ -167,13 +167,13 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             }
             $discordNotification->setProcessDate(new \DateTime());
             $this->entityManager->persist($discordNotification);
-
-            // Treat discord notification
-            $this->embedNotification($webhookUrl, $postEmbedData);
-
-            // Flush
-            $this->entityManager->flush();
         }
+
+        // Treat discord notification
+        $this->embedNotification($webhookUrl, $postEmbedData);
+
+        // Flush
+        $this->entityManager->flush();
     }
 
     /**
