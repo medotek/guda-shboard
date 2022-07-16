@@ -16,6 +16,7 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,15 +44,17 @@ class HoyolabPostsWebhookController extends AbstractController
     private HoyolabPostUserRepository $hoyolabPostUserRepository;
     private UserRepository $userRepository;
     private SerializerInterface $serializer;
+    private LoggerInterface $logger;
 
     public function __construct(
-        HttpClientInterface         $client,
-        HoyolabPostRepository       $hoyolabPostRepository,
-        Security                    $security,
-        EntityManagerInterface      $entityManager,
-        HoyolabPostUserRepository   $hoyolabPostUserRepository,
-        UserRepository              $userRepository,
-        SerializerInterface         $serializer
+        HttpClientInterface       $client,
+        HoyolabPostRepository     $hoyolabPostRepository,
+        Security                  $security,
+        EntityManagerInterface    $entityManager,
+        HoyolabPostUserRepository $hoyolabPostUserRepository,
+        UserRepository            $userRepository,
+        SerializerInterface       $serializer,
+        LoggerInterface           $logger
     )
     {
         $this->client = $client;
@@ -61,6 +64,7 @@ class HoyolabPostsWebhookController extends AbstractController
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
+        $this->logger = $logger;
     }
 
     /**
@@ -127,7 +131,7 @@ class HoyolabPostsWebhookController extends AbstractController
                     ";
 
             $query = $this->entityManager->createQuery($dql)
-                ->setParameter(':uid', (int) $uid)
+                ->setParameter(':uid', (int)$uid)
                 ->setParameter(':user', $user->getId());
 
             $paginator = new Paginator($query, true);
@@ -362,34 +366,24 @@ class HoyolabPostsWebhookController extends AbstractController
         /** @var User $user */
         $user = $this->security->getUser();
         $jsonData = json_decode($request->getContent());
-
         if (!$user || !$jsonData->webhookUrl) {
             return $this->json('error', 400);
         }
 
         /** @var HoyolabPostUser $hoyoUser */
         $hoyoUser = $this->hoyolabPostUserRepository->findOneBy(['user' => $user, 'uid' => $uid]);
-
-        $discordRequest = "";
-        if (!$hoyoUser->getWebhookUrl()) {
-            $discordRequest = $this->client->request('GET', $jsonData->webhookUrl);
-
-            $statusCode = $discordRequest->getStatusCode();
-
-            if ($statusCode !== 200) {
-                return $this->json('This is not a discord webhook', 400);
-            }
-        }
-
         $decryptedExistingUrl = EncryptionManager::decrypt($hoyoUser->getWebhookUrl(), $user->getCreationDate()->getTimestamp());
-
         if ($decryptedExistingUrl === $jsonData->webhookUrl) {
             return $this->json('Same webhook url', 400);
         }
 
         try {
+            $discordRequest = $this->client->request('GET', $jsonData->webhookUrl);
+            $statusCode = $discordRequest->getStatusCode();
+            if ($statusCode !== 200) {
+                return $this->json('This is not a discord webhook', 400);
+            }
             $content = $discordRequest->toArray();
-
             if (array_key_exists('guild_id', $content) &&
                 array_key_exists('token', $content) &&
                 array_key_exists('channel_id', $content) &&
@@ -401,7 +395,6 @@ class HoyolabPostsWebhookController extends AbstractController
                 $this->entityManager->persist($hoyoUser);
                 $this->entityManager->flush();
             }
-
             return $this->json('Webhook added successfully for the hoyo user');
         } catch (ClientExceptionInterface|DecodingExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
         }
