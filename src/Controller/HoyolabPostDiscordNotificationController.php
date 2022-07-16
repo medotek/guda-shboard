@@ -89,7 +89,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $oldStats = [];
             $statsData = [];
             // Update the hoyo post here
-            if (array_key_exists('post', $post['data'])) {
+            if ($post['data'] !== null && array_key_exists('post', $post['data'])) {
                 $postData = $post['data']['post']['post'];
                 $statsData = $post['data']['post']['stat'];
 
@@ -123,70 +123,75 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 // Only persist the new stats
                 $this->entityManager->persist($newStats);
             }
+            // TODO delete with foreign key
+//            else {
+//                $this->entityManager->remove($hoyoPost);
+//            }
 
+            if (!empty($statsData)) {
+                // TODO refacto
+                $diffView = (int)$statsData[TaxonomyInterface::VIEWS_MAPPING] - $oldStats[TaxonomyInterface::VIEWS_MAPPING];
+                $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
 
-            // TODO refacto
-            $diffView = (int)$statsData[TaxonomyInterface::VIEWS_MAPPING] - $oldStats[TaxonomyInterface::VIEWS_MAPPING];
-            $diffView ? ($diffView = " **+{$diffView}**") : $diffView = "";
+                $diffBookmark = (int)$statsData[TaxonomyInterface::BOOKMARKS_MAPPING] - $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING];
+                $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
 
-            $diffBookmark = (int)$statsData[TaxonomyInterface::BOOKMARKS_MAPPING] - $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING];
-            $diffBookmark ? $diffBookmark = " **+{$diffBookmark}**" : $diffBookmark = "";
+                $diffLike = (int)$statsData[TaxonomyInterface::LIKES_MAPPING] - $oldStats[TaxonomyInterface::LIKES_MAPPING];
+                $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
 
-            $diffLike = (int)$statsData[TaxonomyInterface::LIKES_MAPPING] - $oldStats[TaxonomyInterface::LIKES_MAPPING];
-            $diffLike ? $diffLike = " **+{$diffLike}**" : $diffLike = "";
+                $diffShare = (int)$statsData[TaxonomyInterface::SHARES_MAPPING] - $oldStats[TaxonomyInterface::SHARES_MAPPING];
+                $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
 
-            $diffShare = (int)$statsData[TaxonomyInterface::SHARES_MAPPING] - $oldStats[TaxonomyInterface::SHARES_MAPPING];
-            $diffShare ? $diffShare = " **+{$diffShare}**" : $diffShare = "";
+                $diffReply = (int)$statsData[TaxonomyInterface::REPLIES_MAPPING] - $oldStats[TaxonomyInterface::REPLIES_MAPPING];
+                $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
 
-            $diffReply = (int)$statsData[TaxonomyInterface::REPLIES_MAPPING] - $oldStats[TaxonomyInterface::REPLIES_MAPPING];
-            $diffReply ? $diffReply = " **+{$diffReply}**" : $diffReply = "";
+                // Compare cron stats with updated stats
+                $statistics = [
+                    'view' => $oldStats[TaxonomyInterface::VIEWS_MAPPING] . $diffView,
+                    'bookmark' => $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING] . $diffBookmark,
+                    'like' => $oldStats[TaxonomyInterface::LIKES_MAPPING] . $diffLike,
+                    'share' => $oldStats[TaxonomyInterface::SHARES_MAPPING] . $diffShare,
+                    'reply' => $oldStats[TaxonomyInterface::REPLIES_MAPPING] . $diffReply,
+                ];
 
-            // Compare cron stats with updated stats
-            $statistics = [
-                'view' => $oldStats[TaxonomyInterface::VIEWS_MAPPING] . $diffView,
-                'bookmark' => $oldStats[TaxonomyInterface::BOOKMARKS_MAPPING] . $diffBookmark,
-                'like' => $oldStats[TaxonomyInterface::LIKES_MAPPING] . $diffLike,
-                'share' => $oldStats[TaxonomyInterface::SHARES_MAPPING] . $diffShare,
-                'reply' => $oldStats[TaxonomyInterface::REPLIES_MAPPING] . $diffReply,
-            ];
+                // Prepare embed data
+                $postEmbedData[] = [
+                    'postId' => $hoyoPost->getPostId(),
+                    'news' => $newStats->getReply() - $oldStats[TaxonomyInterface::REPLIES_MAPPING],
+                    'subject' => $hoyoPost->getSubject(),
+                    'stats' => $statistics,
+                    'postCreationDate' => $hoyoPost->getPostCreationDate(),
+                    'hoyoUserImage' => $hoyoPost->getImage()
+                ];
 
-            // Prepare embed data
-            $postEmbedData[] = [
-                'postId' => $hoyoPost->getPostId(),
-                'news' => $newStats->getReply() - $oldStats[TaxonomyInterface::REPLIES_MAPPING],
-                'subject' => $hoyoPost->getSubject(),
-                'stats' => $statistics,
-                'postCreationDate' => $hoyoPost->getPostCreationDate(),
-                'hoyoUserImage' => $hoyoPost->getImage()
-            ];
-
-            // If the post never has a notification message on discord, then create one!
-            if (!$discordNotification) {
-                $discordNotification = new HoyolabPostDiscordNotification();
-                $discordNotification->setHoyolabPost($hoyoPost);
+                // If the post never has a notification message on discord, then create one!
+                if (!$discordNotification) {
+                    $discordNotification = new HoyolabPostDiscordNotification();
+                    $discordNotification->setHoyolabPost($hoyoPost);
+                }
+                $discordNotification->setProcessDate(new \DateTime());
+                $this->entityManager->persist($discordNotification);
             }
-            $discordNotification->setProcessDate(new \DateTime());
-            $this->entityManager->persist($discordNotification);
         }
 
         // Treat discord notification
-        $this->embedNotification($webhookUrl, $postEmbedData);
-
-        // Flush
-        $this->entityManager->flush();
+        if ($this->embedNotification($webhookUrl, $postEmbedData)) {
+            // Flush
+            $this->entityManager->flush();
+        }
     }
 
     /**
      * Send discord notification
      * @param $webhook
      * @param $embeds
-     * @return void
+     * @return bool
      * @throws TransportExceptionInterface
      */
-    private function embedNotification($webhook, $embeds): void
+    private function embedNotification($webhook, $embeds): bool
     {
         if (!is_array($embeds) || empty($embeds)) {
-            return;
+            return false;
         }
         $embedsGroups = array_chunk($embeds, 10);
 
@@ -201,6 +206,7 @@ class HoyolabPostDiscordNotificationController extends AbstractController
             $messages[] = $message;
         }
 
+        $error = false;
         foreach ($messages as $send) {
             $response = $this->hoyolabRequest->sendDiscordEmbed($webhook, $send);
             if ($response->getStatusCode() === 200) {
@@ -209,10 +215,14 @@ class HoyolabPostDiscordNotificationController extends AbstractController
                 } catch (ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface|TransportExceptionInterface $e) {
                     // TODO : logger
                     $this->logger->error('[ERROR] Embed message couldn\' be sent | error trace :  ' . $e);
+                    $error = true;
                 }
             } else {
                 $this->logger->error('[ERROR] Discord endpoint response status :  ' . $response->getStatusCode());
+                $error = true;
             }
         }
+        if ($error) return false;
+        return true;
     }
 }

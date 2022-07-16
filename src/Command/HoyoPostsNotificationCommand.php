@@ -52,6 +52,7 @@ class HoyoPostsNotificationCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($id = (int) $input->getArgument('id')) {
+            $this->logger->info('[INFO] Run command : ' . self::$defaultName .'. Id : ' . $id);
             $taskForce = new HoyolabPostDiscordNotificationController($this->hoyolabPostUserRepository, $this->entityManager, $this->hoyolabRequest, $this->logger);
             $taskForce->discordNotificationCron($id);
         }
