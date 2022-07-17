@@ -27,7 +27,6 @@ class UpdateHoyoPostListCommand extends Command
     private SerializerInterface $serializer;
 
     public function __construct(
-        string $name = null,
         EntityManagerInterface $entityManager,
         HttpClientInterface $client,
         HoyolabPostUserRepository $hoyolabPostUserRepository,
@@ -37,7 +36,7 @@ class UpdateHoyoPostListCommand extends Command
         Security                    $security
     )
     {
-        parent::__construct($name);
+        parent::__construct();
 
         $this->entityManager = $entityManager;
         $this->client = $client;

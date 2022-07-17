@@ -18,12 +18,11 @@ class CreateUserCommand extends \Symfony\Component\Console\Command\Command
     protected static $defaultName = 'app:create:user';
 
     public function __construct(
-        string $name = null,
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $entityManager
     )
     {
-        parent::__construct($name);
+        parent::__construct();
         $this->passwordHasher = $passwordHasher;
         $this->entityManager = $entityManager;
     }

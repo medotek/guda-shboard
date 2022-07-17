@@ -56,7 +56,7 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
     /**
      * @ORM\Column(type="json", nullable=true)
      */
-    private $roles = [];
+    private $roles = [ "ROLE_USER" ]; // DEFAULT
 
     /**
      * @Groups("user")
@@ -118,6 +118,7 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
         $this->discordOwnedWehbooks = new ArrayCollection();
         $this->hoyolabPosts = new ArrayCollection();
         $this->hoyolabPostUsers = new ArrayCollection();
+        $this->creationDate = new \DateTime();
     }
 
     public function getId(): ?int

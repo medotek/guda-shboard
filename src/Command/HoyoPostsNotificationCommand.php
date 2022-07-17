@@ -24,14 +24,13 @@ class HoyoPostsNotificationCommand extends Command
     private LoggerInterface $logger;
 
     public function __construct(
-        string $name = null,
         EntityManagerInterface $entityManager,
         HoyolabPostUserRepository $hoyolabPostUserRepository,
         HoyolabRequest $hoyolabRequest,
         LoggerInterface $logger
     )
     {
-        parent::__construct($name);
+        parent::__construct();
 
         $this->entityManager = $entityManager;
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;

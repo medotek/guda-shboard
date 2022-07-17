@@ -20,12 +20,11 @@ class HoyoUserNotificationsCronProcess extends Command
     private LoggerInterface $logger;
 
     public function __construct(
-        string                    $name = null,
         HoyolabPostUserRepository $hoyolabPostUserRepository,
         LoggerInterface $logger
     )
     {
-        parent::__construct($name);
+        parent::__construct();
         $this->hoyolabPostUserRepository = $hoyolabPostUserRepository;
         $this->logger = $logger;
     }
@@ -48,18 +47,17 @@ class HoyoUserNotificationsCronProcess extends Command
             /** @var HoyolabPostUser $hoyoUser */
             $process = new Process([$phpBinaryPath, 'bin/console', 'app:guda:notification-process', $hoyoUser->getId()]);
             $process->setWorkingDirectory(getcwd());
+            $process->disableOutput();
+            $process->setTimeout(1800);
             $process->start();
-
-            // TODO : Si on wait, ça marche ... Mais ce n'est pas le but
-
-            if ($process->waitUntil(function ($input, $output) {
-                dump($output);
-            }))
 
             if (!$process->isRunning()) {
                 $errors[] = $process->getExitCode();
             }
+
+            dump($process->wait());
         }
+
 
         if (!empty($errors)) {
             $this->logger->error('[ERROR] On command app:guda:hoyo-discord-notification, errors code : ' . implode(',', $errors));

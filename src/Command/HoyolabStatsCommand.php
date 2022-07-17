@@ -23,7 +23,6 @@ class HoyolabStatsCommand extends Command
     private LoggerInterface $logger;
 
     public function __construct(
-        string $name = null,
         EntityManagerInterface $entityManager,
         HoyolabRequest         $hoyolabRequest,
         HttpClientInterface    $httpClient,
@@ -32,7 +31,7 @@ class HoyolabStatsCommand extends Command
 
     )
     {
-        parent::__construct($name);
+        parent::__construct();
         $this->entityManager = $entityManager;
         $this->hoyolabRequest = $hoyolabRequest;
         $this->httpClient     = $httpClient;
