@@ -10,29 +10,9 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class AppController extends AbstractController
 {
-    private UserRepository $userRepository;
-
-    public function __construct(
-        UserRepository         $userRepository
-    )
-    {
-        $this->userRepository = $userRepository;
-    }
-
-    /**
-     * @Route("/exists", name="existCredentials")
-     */
-    public function exist(): JsonResponse
-    {
-        if (empty($this->userRepository->findOneBy(['name' => 'test']))) {
-            return new JsonResponse('exists');
-        }
-        return new JsonResponse('doesn\'t exist');
-    }
-
     /**
      * @Route("/", name="homepage")
-     * @Route("/{route}", name="vue_pages", requirements={"route"="^(?!.*api).+"})
+     * @Route("/{route}", name="vue_pages", requirements={"route"="^(?!.*api|gudadmin).+"})
      */
     public function app() : Response
     {

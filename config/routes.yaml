@@ -2,4 +2,8 @@ login:
   path: /api/login
   methods: ['POST']
   defaults:
-    _format: json 
+    _format: json
+
+admin_logout:
+  path: /gudadmin/logout
+  methods: GET

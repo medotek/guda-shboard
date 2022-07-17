@@ -158,6 +158,6 @@ class AuthController extends AbstractController
                 $user
             ], 200);
         }
-        return new JsonResponse('You need to be authenticated', 500);
+        return new JsonResponse('You need to be authenticated', 401);
     }
 }

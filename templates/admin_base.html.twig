@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Welcome!{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {#    TODO : change icon #}
+    <link rel="icon" type="image/png"
+          href="https://cdn.discordapp.com/emojis/790935266524266546.webp?size=96&quality=lossless">
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('admin') }}
+    {% endblock %}
+
+    {% block javascripts %}
+        {{ encore_entry_script_tags('admin') }}
+    {% endblock %}
+</head>
+<body>
+<div id="admin"></div>
+{% block body %}{% endblock %}
+</body>
+</html>

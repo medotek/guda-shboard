@@ -33,7 +33,7 @@ class AdminDashboardController extends AbstractDashboardController
         $user = $this->security->getUser();
 
         if (!$user) {
-            return $this->redirect('/');
+            return $this->redirectToRoute('gudadmin_login');
         }
 
         return $this->redirect($this->adminUrlGenerator->setController(UserCrudController::class)->generateUrl());

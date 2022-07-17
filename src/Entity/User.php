@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @UniqueEntity(fields="name", message="Ce nom d'utilisateur a déjà été pris.")
  * @UniqueEntity(fields="email", message="Cet email est déjà utilisé. Si vous n'avez jamais mis votre email sur le site, veuilez contacter un administrateur.")
  */
-class User implements UserInterface
+class User implements UserInterface, \Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface
 {
     private $encoderFactory;
 

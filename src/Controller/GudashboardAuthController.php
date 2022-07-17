@@ -12,7 +12,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class GudashboardAuthController extends AbstractController
 {
     /**
-     * @Route("/account/login", name="app_login")
+     * @Route("/gudadmin/login", name="gudadmin_login")
      * @param AuthenticationUtils $authenticationUtils
      * @return Response
      */

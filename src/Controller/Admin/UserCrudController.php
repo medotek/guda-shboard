@@ -31,7 +31,7 @@ class UserCrudController extends AbstractCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return $crud
-            ->setEntityPermission('ROLE_SUPERADMIN');
+            ->setEntityPermission('ROLE_GUDADMIN');
     }
 
     public function configureFields(string $pageName): iterable

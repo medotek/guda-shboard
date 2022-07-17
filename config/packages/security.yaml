@@ -12,6 +12,18 @@ security:
                 property: email
 
     firewalls:
+        main:
+            form_login:
+                login_path: gudadmin_login
+                check_path: gudadmin_login
+                enable_csrf: true
+                username_parameter: "email"
+                password_parameter: "password"
+                default_target_path: admin
+                #   always_use_default_target_path: true
+            logout:
+                path: admin_logout
+
         register:
             pattern: ^/api/register
 
@@ -33,7 +45,8 @@ security:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
 #        - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/gudadmin, roles: ROLE_GUDADMIN }
+        - { path: /gudadmin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/gudadmin, roles: [ROLE_GUDADMIN, ROLE_ADMIN] }
 
 when@test:
     security:

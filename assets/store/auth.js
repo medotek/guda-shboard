@@ -133,7 +133,6 @@ export default {
                 })
         },
         /**
-         * Guess it ^^
          * @param commit
          */
         logout({commit}) {
