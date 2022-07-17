@@ -61,7 +61,12 @@ export default {
     actions: {
         async login({dispatch}, credentials) {
             store.commit('setLoading', true)
-            let response = await axios.post('/login', credentials)
+            let response = await axios.post('/login', credentials, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
                 .catch((e) => {
                     store.commit('setLoading', false);
                     console.log(e);
