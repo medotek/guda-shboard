@@ -8,6 +8,7 @@ use App\Repository\HoyolabPostRepository;
 use App\Repository\HoyolabPostUserRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,6 +26,7 @@ class UpdateHoyoPostListCommand extends Command
     private Security $security;
     private UserRepository $userRepository;
     private SerializerInterface $serializer;
+    private LoggerInterface $logger;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -33,7 +35,8 @@ class UpdateHoyoPostListCommand extends Command
         HoyolabPostRepository $hoyolabPostRepository,
         UserRepository              $userRepository,
         SerializerInterface         $serializer,
-        Security                    $security
+        Security                    $security,
+        LoggerInterface             $logger
     )
     {
         parent::__construct();
@@ -45,6 +48,7 @@ class UpdateHoyoPostListCommand extends Command
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
         $this->security = $security;
+        $this->logger   = $logger;
     }
 
     protected function configure(): void
@@ -65,7 +69,8 @@ class UpdateHoyoPostListCommand extends Command
             $this->entityManager,
             $this->hoyolabPostUserRepository,
             $this->userRepository,
-            $this->serializer
+            $this->serializer,
+            $this->logger
         );
 
         $taskForce->updateHoyolabUserPostsList();
